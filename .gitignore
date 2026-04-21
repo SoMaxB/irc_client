@@ -1,0 +1,60 @@
+# Build artifacts
+build/
+cmake-build-debug/
+cmake-build-release/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Executables
+irc_client_qt
+irc_client_qt.exe
+*.exe
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Qt generated files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.ui~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.qbs.user
+
+# Debug
+.gdb_history
+*.dmp
+*.stackdump
+core
+vgcore.*
+
+# Cache
+.cache/
+*.cache
+
+# Package managers
+vcpkg_installed/
+conan/
+
+# Temporary files
+*.tmp
+*.log
+*.patch
