@@ -454,29 +454,6 @@ void MainWindow::createMainUI() {
 
     mainLayout->addWidget(splitter, 1);
 
-    // Search bar for the active conversation
-    QHBoxLayout* searchLayout = new QHBoxLayout();
-    searchLayout->setContentsMargins(0, 0, 0, 0);
-    searchLayout->setSpacing(8);
-
-    m_searchInput = new QLineEdit(this);
-    m_searchInput->setPlaceholderText("Search current history...");
-    m_searchInput->setClearButtonEnabled(true);
-
-    m_searchPrevButton = new QPushButton("Prev", this);
-    m_searchNextButton = new QPushButton("Next", this);
-    m_searchStatusLabel = new QLabel("0 matches", this);
-
-    connect(m_searchInput, &QLineEdit::returnPressed, this, &MainWindow::onSearchRequested);
-    connect(m_searchPrevButton, &QPushButton::clicked, this, &MainWindow::onSearchPreviousRequested);
-    connect(m_searchNextButton, &QPushButton::clicked, this, &MainWindow::onSearchNextRequested);
-
-    searchLayout->addWidget(m_searchInput, 1);
-    searchLayout->addWidget(m_searchPrevButton);
-    searchLayout->addWidget(m_searchNextButton);
-    searchLayout->addWidget(m_searchStatusLabel);
-    mainLayout->addLayout(searchLayout);
-
     // Bottom: Message input bar
     QHBoxLayout* inputLayout = new QHBoxLayout();
     m_messageInput = new QLineEdit(this);
@@ -500,9 +477,6 @@ void MainWindow::createMainUI() {
     m_userList->setEnabled(false);
     m_chatDisplay->setEnabled(false);
     m_messageInput->setEnabled(false);
-    m_searchInput->setEnabled(false);
-    m_searchPrevButton->setEnabled(false);
-    m_searchNextButton->setEnabled(false);
 }
 
 void MainWindow::updateConnectionUi(bool connected) {
@@ -576,9 +550,6 @@ void MainWindow::updateSendControls() {
     }
 
     m_messageInput->setEnabled(m_isConnected);
-    m_searchInput->setEnabled(m_isConnected && m_registrationComplete);
-    m_searchPrevButton->setEnabled(m_isConnected && m_registrationComplete);
-    m_searchNextButton->setEnabled(m_isConnected && m_registrationComplete);
 }
 
 void MainWindow::setConnectionPanelExpanded(bool expanded) {
@@ -929,7 +900,6 @@ void MainWindow::onChannelClicked(const QModelIndex& index) {
     m_currentChannel = channelName;
     m_channelModel->clearUnread(channelName);
     refreshCurrentConversationView();
-    updateSearchResults(m_searchQuery);
     updateChannelInfo();
     updateUserList();
 }
@@ -1102,12 +1072,6 @@ bool MainWindow::handleSlashCommand(const QString& message) {
         return true;
     }
 
-    if (parsed.type == CommandHandler::Type::Search) {
-        m_searchInput->setText(parsed.arg1);
-        updateSearchResults(parsed.arg1);
-        return true;
-    }
-
     if (parsed.type == CommandHandler::Type::Topic) {
         auto isChannelName = [](const QString& value) {
             return value.startsWith('#') || value.startsWith('&') ||
@@ -1207,7 +1171,6 @@ void MainWindow::appendConversationLine(const QString& conversation, const QStri
 
     if (conversation == m_currentChannel || (m_currentChannel.isEmpty() && conversation == "*")) {
         refreshCurrentConversationView();
-        updateSearchResults(m_searchQuery);
     }
 }
 
@@ -1284,85 +1247,6 @@ void MainWindow::updateUserList() {
 
 QString MainWindow::currentConversationKey() const {
     return m_currentChannel.isEmpty() ? QString("*") : m_currentChannel;
-}
-
-void MainWindow::updateSearchResults(const QString& query) {
-    if (!m_searchStatusLabel || !m_chatDisplay) {
-        return;
-    }
-
-    m_searchQuery = query.trimmed();
-    m_searchMatches.clear();
-    m_searchMatchIndex = -1;
-
-    if (m_searchQuery.isEmpty()) {
-        m_searchStatusLabel->setText("0 matches");
-        return;
-    }
-
-    const QString text = m_chatDisplay->toPlainText();
-    int position = 0;
-    while ((position = text.indexOf(m_searchQuery, position, Qt::CaseInsensitive)) != -1) {
-        m_searchMatches.append(position);
-        position += qMax(1, m_searchQuery.size());
-    }
-
-    if (m_searchMatches.isEmpty()) {
-        m_searchStatusLabel->setText("0 matches");
-        return;
-    }
-
-    jumpToSearchResult(0);
-}
-
-void MainWindow::jumpToSearchResult(int index) {
-    if (!m_chatDisplay || m_searchMatches.isEmpty() || m_searchQuery.isEmpty()) {
-        return;
-    }
-
-    const int normalizedIndex = (index % m_searchMatches.size() + m_searchMatches.size()) % m_searchMatches.size();
-    m_searchMatchIndex = normalizedIndex;
-
-    QTextCursor cursor(m_chatDisplay->document());
-    const int start = m_searchMatches.at(normalizedIndex);
-    cursor.setPosition(start);
-    cursor.setPosition(start + m_searchQuery.size(), QTextCursor::KeepAnchor);
-    m_chatDisplay->setTextCursor(cursor);
-    m_chatDisplay->ensureCursorVisible();
-
-    m_searchStatusLabel->setText(QString("%1/%2 matches").arg(normalizedIndex + 1).arg(m_searchMatches.size()));
-}
-
-void MainWindow::onSearchRequested() {
-    updateSearchResults(m_searchInput->text());
-}
-
-void MainWindow::onSearchNextRequested() {
-    if (m_searchInput->text().trimmed().isEmpty()) {
-        m_statusBar->setText("Type text to search the current history");
-        return;
-    }
-
-    if (m_searchQuery != m_searchInput->text().trimmed() || m_searchMatches.isEmpty()) {
-        updateSearchResults(m_searchInput->text());
-        return;
-    }
-
-    jumpToSearchResult(m_searchMatchIndex + 1);
-}
-
-void MainWindow::onSearchPreviousRequested() {
-    if (m_searchInput->text().trimmed().isEmpty()) {
-        m_statusBar->setText("Type text to search the current history");
-        return;
-    }
-
-    if (m_searchQuery != m_searchInput->text().trimmed() || m_searchMatches.isEmpty()) {
-        updateSearchResults(m_searchInput->text());
-        return;
-    }
-
-    jumpToSearchResult(m_searchMatchIndex - 1);
 }
 
 void MainWindow::loadConfigurationSettings() {

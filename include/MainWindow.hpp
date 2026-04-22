@@ -48,9 +48,6 @@ private slots:
     void onChannelClicked(const QModelIndex& index);
     void onMessageSent();
     void onReconnectAttempt();  // Auto-reconnect timer callback
-    void onSearchRequested();
-    void onSearchNextRequested();
-    void onSearchPreviousRequested();
 
 private:
     void setupUI();
@@ -117,10 +114,6 @@ private:
     QTextEdit* m_chatDisplay = nullptr;           // Center: message history
     QListView* m_userList = nullptr;              // Right panel: users
     QLineEdit* m_messageInput = nullptr;          // Bottom: message input
-    QLineEdit* m_searchInput = nullptr;           // Search current buffer
-    QPushButton* m_searchPrevButton = nullptr;
-    QPushButton* m_searchNextButton = nullptr;
-    QLabel* m_searchStatusLabel = nullptr;
     QLabel* m_statusBar = nullptr;
     QLabel* m_topicLabel = nullptr;               // Channel topic display
     
@@ -144,10 +137,6 @@ private:
     QString m_lastConnectedServer;
     quint16 m_lastConnectedPort = 0;
     bool m_lastConnectedUseTls = false;
-    QString m_searchQuery;
-    QVector<int> m_searchMatches;
-    int m_searchMatchIndex = -1;
-    
     // State
     bool m_isConnected;
     bool m_registrationRequired;
