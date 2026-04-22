@@ -906,8 +906,23 @@ void MainWindow::onChannelClicked(const QModelIndex& index) {
 
 void MainWindow::onMessageSent() {
     const QString message = m_messageInput->text();
-    if (!m_isConnected || message.isEmpty()) {
+
+    if (!m_isConnected) {
         return;
+    }
+
+    if (message.isEmpty()) {
+        if (!m_searchQuery.isEmpty() && !m_searchMatches.isEmpty()) {
+            jumpToSearchMatch(m_searchMatchIndex + 1);
+            m_statusBar->setText(QString::number(m_searchMatchIndex + 1) + "/" + QString::number(m_searchMatches.size()) + " matches");
+        }
+        return;
+    }
+
+    if (!m_searchQuery.isEmpty()) {
+        m_searchQuery.clear();
+        m_searchMatches.clear();
+        m_searchMatchIndex = -1;
     }
 
     if (message.startsWith('/')) {
@@ -1078,19 +1093,25 @@ bool MainWindow::handleSlashCommand(const QString& message) {
             m_statusBar->setText("Usage: /search text");
             return true;
         }
-        QString currentText = m_chatDisplay->toPlainText();
-        QStringList lines = currentText.split('\n', Qt::SkipEmptyParts);
-        int matchCount = 0;
-        for (const QString& line : lines) {
-            if (line.contains(query, Qt::CaseInsensitive)) {
-                matchCount++;
-            }
+
+        m_searchQuery = query;
+        m_searchMatches.clear();
+        m_searchMatchIndex = -1;
+
+        const QString text = m_chatDisplay->toPlainText();
+        int position = 0;
+        while ((position = text.indexOf(m_searchQuery, position, Qt::CaseInsensitive)) != -1) {
+            m_searchMatches.append(position);
+            position += qMax(1, m_searchQuery.size());
         }
-        if (matchCount > 0) {
-            appendConversationLine("*", "[system] Found " + QString::number(matchCount) + " matches for: " + query);
-        } else {
-            appendConversationLine("*", "[system] No matches found for: " + query);
+
+        if (m_searchMatches.isEmpty()) {
+            m_statusBar->setText("No matches found for: " + query);
+            return true;
         }
+
+        jumpToSearchMatch(0);
+        m_statusBar->setText(QString::number(m_searchMatches.size()) + " matches - Enter for next");
         return true;
     }
 
@@ -1208,6 +1229,26 @@ void MainWindow::refreshCurrentConversationView() {
     for (const QString& line : lines) {
         m_chatDisplay->append(line);
     }
+
+    if (!m_searchQuery.isEmpty() && !m_searchMatches.isEmpty()) {
+        jumpToSearchMatch(m_searchMatchIndex);
+    }
+}
+
+void MainWindow::jumpToSearchMatch(int index) {
+    if (!m_chatDisplay || m_searchMatches.isEmpty() || m_searchQuery.isEmpty()) {
+        return;
+    }
+
+    const int normalizedIndex = (index % m_searchMatches.size() + m_searchMatches.size()) % m_searchMatches.size();
+    m_searchMatchIndex = normalizedIndex;
+
+    QTextCursor cursor(m_chatDisplay->document());
+    const int start = m_searchMatches.at(normalizedIndex);
+    cursor.setPosition(start);
+    cursor.setPosition(start + m_searchQuery.size(), QTextCursor::KeepAnchor);
+    m_chatDisplay->setTextCursor(cursor);
+    m_chatDisplay->ensureCursorVisible();
 }
 
 QString MainWindow::extractNickFromPrefix(const QString& prefix) const {

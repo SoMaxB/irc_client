@@ -62,6 +62,7 @@ private:
     bool handleServerPing(const IrcMessage& msg);
     bool handleNumericMessage(const IrcMessage& msg);
     void refreshCurrentConversationView();
+    void jumpToSearchMatch(int index);
     QString extractNickFromPrefix(const QString& prefix) const;
     void updateChannelInfo();
     void updateUserList();
@@ -116,7 +117,12 @@ private:
     QLineEdit* m_messageInput = nullptr;          // Bottom: message input
     QLabel* m_statusBar = nullptr;
     QLabel* m_topicLabel = nullptr;               // Channel topic display
-    
+
+    // Search state
+    QString m_searchQuery;
+    QVector<int> m_searchMatches;
+    int m_searchMatchIndex = -1;
+
     // Models
     std::unique_ptr<ChannelModel> m_channelModel;
     std::unique_ptr<UserModel> m_userModel;
