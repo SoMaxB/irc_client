@@ -217,7 +217,6 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 
 ## Reusing Code from ft_irc
 
-This project can leverage utilities from `/home/max/code/irc/`:
 - Message parsing logic
 - Protocol command structure
 - User and Channel data models
