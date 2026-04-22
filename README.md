@@ -1,6 +1,6 @@
 # IRC Client - Qt6 & C++17
 
-A modern, minimalist IRC client built with Qt6 and C++17. This project is a graphical interface client for IRC servers, developed independently from the main 42 IRC server project.
+A modern, minimalist IRC client built with Qt6 and C++17. This project is a graphical interface client for IRC servers.
 
 ## Features
 
@@ -300,9 +300,9 @@ Personal project for educational purposes.
 
 ## Contributing
 
-Solo project - feedback and improvements welcome.
+Team project - feedback and improvements welcome.
 
 ## Authors
 
-- Main developer: max
-- Based on ft_irc server implementation
+- Main developer: SoMaxB
+- Based on 42 project ft_irc server from GitHub Users: 4Bi4 - Lucasfdp & SoMaxB
