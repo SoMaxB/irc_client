@@ -100,9 +100,9 @@ Palette optionB() {
     p.errorBg = "rgba(248, 81, 73, 0.15)";
     p.highlight = "#1f6feb";
     p.splitter = "#30363d";
-    p.borderRadius = 6;
-    p.borderRadiusSmall = 4;
-    p.splitterWidth = 4;
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
     return p;
 }
 
