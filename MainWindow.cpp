@@ -50,6 +50,7 @@ struct Palette {
     QString highlight;
     QString splitter;
     int borderRadius;
+    int borderRadiusSmall;
     int splitterWidth;
 };
 
@@ -74,6 +75,7 @@ Palette optionA() {
     p.highlight = "#27406f";
     p.splitter = "#252a35";
     p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
     p.splitterWidth = 6;
     return p;
 }
@@ -99,6 +101,7 @@ Palette optionB() {
     p.highlight = "#1f6feb";
     p.splitter = "#30363d";
     p.borderRadius = 6;
+    p.borderRadiusSmall = 4;
     p.splitterWidth = 4;
     return p;
 }
@@ -526,12 +529,16 @@ void MainWindow::updateAutoReconnectIndicator() {
         return;
     }
 
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+
     if (m_autoReconnectEnabled) {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: ON");
-        m_autoReconnectIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #123524; color: #9be7b4; font-weight: 600;");
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
     } else {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: OFF");
-        m_autoReconnectIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #3a1f1f; color: #f1b3b3; font-weight: 600;");
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.errorBg).arg(p.error));
     }
 }
 
@@ -539,6 +546,8 @@ void MainWindow::updateRegistrationIndicator() {
     if (!m_registrationIndicatorLabel) {
         return;
     }
+
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
 
     if (!m_isConnected) {
         m_registrationIndicatorLabel->setText("");
@@ -548,13 +557,16 @@ void MainWindow::updateRegistrationIndicator() {
 
     if (m_registrationComplete) {
         m_registrationIndicatorLabel->setText("Registered");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #123524; color: #9be7b4; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
     } else if (m_registrationRequired) {
         m_registrationIndicatorLabel->setText("Registration required");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #3a2a10; color: #f0c080; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.warningBg).arg(p.warning));
     } else {
         m_registrationIndicatorLabel->setText("Registering...");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #1a2240; color: #8090c0; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.backgroundSecondary).arg(p.textSecondary));
     }
 }
 
@@ -1521,6 +1533,21 @@ void MainWindow::setTheme(bool useThemeB) {
 
     if (m_statusBar) {
         m_statusBar->setStyleSheet(QString("border-top: 1px solid %1; padding: 8px 10px; color: %2;").arg(p.border).arg(p.textSecondary));
+    }
+
+    if (m_connectionPanelToggleButton) {
+        m_connectionPanelToggleButton->setStyleSheet(QString(
+            "QPushButton {"
+            "  border-radius: %1px;"
+            "  padding: 0px;"
+            "  font-weight: 700;"
+            "  background: %2;"
+            "  color: %3;"
+            "}"
+            "QPushButton:hover {"
+            "  background: %4;"
+            "}"
+        ).arg(p.borderRadiusSmall).arg(p.accentSecondary).arg(p.text).arg(p.border));
     }
 
     applyStyle();
