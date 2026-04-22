@@ -28,6 +28,90 @@ bool isChannelTarget(const QString& name) {
 
 }
 
+namespace ThemeColors {
+
+struct Palette {
+    QString background;
+    QString backgroundSecondary;
+    QString inputBg;
+    QString border;
+    QString text;
+    QString textSecondary;
+    QString accentPrimary;
+    QString accentHover;
+    QString accentPressed;
+    QString accentSecondary;
+    QString success;
+    QString successBg;
+    QString warning;
+    QString warningBg;
+    QString error;
+    QString errorBg;
+    QString highlight;
+    QString splitter;
+    int borderRadius;
+    int borderRadiusSmall;
+    int splitterWidth;
+};
+
+Palette optionA() {
+    Palette p;
+    p.background = "#121417";
+    p.backgroundSecondary = "#171a21";
+    p.inputBg = "#20242d";
+    p.border = "#303644";
+    p.text = "#f2f4f8";
+    p.textSecondary = "#94a3b8";
+    p.accentPrimary = "#2b5cff";
+    p.accentHover = "#3b6bff";
+    p.accentPressed = "#234bd1";
+    p.accentSecondary = "#263042";
+    p.success = "#9be7b4";
+    p.successBg = "#123524";
+    p.warning = "#f0c080";
+    p.warningBg = "#3a2a10";
+    p.error = "#f1b3b3";
+    p.errorBg = "#3a1f1f";
+    p.highlight = "#27406f";
+    p.splitter = "#252a35";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+Palette optionB() {
+    Palette p;
+    p.background = "#0d1117";
+    p.backgroundSecondary = "#161b22";
+    p.inputBg = "#21262d";
+    p.border = "#30363d";
+    p.text = "#f0f6fc";
+    p.textSecondary = "#8b949e";
+    p.accentPrimary = "#58a6ff";
+    p.accentHover = "#79b8ff";
+    p.accentPressed = "#388bfd";
+    p.accentSecondary = "#21262d";
+    p.success = "#3fb950";
+    p.successBg = "rgba(63, 185, 80, 0.15)";
+    p.warning = "#d29922";
+    p.warningBg = "rgba(210, 153, 34, 0.15)";
+    p.error = "#f85149";
+    p.errorBg = "rgba(248, 81, 73, 0.15)";
+    p.highlight = "#1f6feb";
+    p.splitter = "#30363d";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+Palette currentPalette(bool useThemeB) {
+    return useThemeB ? optionB() : optionA();
+}
+
+}
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       m_centralWidget(new QWidget(this)),
@@ -84,63 +168,78 @@ void MainWindow::setupUI() {
 }
 
 void MainWindow::applyStyle() {
-    setStyleSheet(R"(
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+    QString style = QString(R"(
         QMainWindow {
-            background: #121417;
-            color: #f2f4f8;
+            background: %1;
+            color: %2;
         }
         QDialog {
-            background: #171a21;
-            color: #f2f4f8;
+            background: %3;
+            color: %2;
         }
         QLabel {
-            color: #e5e7eb;
+            color: %2;
         }
         QLineEdit {
-            background: #20242d;
-            color: #f8fafc;
-            border: 1px solid #303644;
-            border-radius: 8px;
+            background: %4;
+            color: %2;
+            border: 1px solid %5;
+            border-radius: %6px;
             padding: 8px 10px;
-            selection-background-color: #4f7cff;
+            selection-background-color: %7;
         }
         QLineEdit:focus {
-            border: 1px solid #6b8dff;
+            border: 1px solid %7;
         }
         QPushButton {
-            background: #2b5cff;
+            background: %8;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: %6px;
             padding: 8px 14px;
             font-weight: 600;
         }
         QPushButton:hover {
-            background: #3b6bff;
+            background: %9;
         }
         QPushButton:pressed {
-            background: #234bd1;
+            background: %10;
         }
         QListView, QTextEdit {
-            background: #161a22;
-            color: #edf2ff;
-            border: 1px solid #2a3040;
-            border-radius: 10px;
+            background: %3;
+            color: %2;
+            border: 1px solid %5;
+            border-radius: %6px;
         }
         QListView::item {
             padding: 8px 10px;
         }
         QListView::item:selected {
-            background: #27406f;
+            background: %11;
             color: white;
         }
         QTextEdit {
             padding: 10px;
         }
         QSplitter::handle {
-            background: #252a35;
+            background: %12;
         }
-    )");
+    )")
+        .arg(p.background)
+        .arg(p.text)
+        .arg(p.backgroundSecondary)
+        .arg(p.inputBg)
+        .arg(p.border)
+        .arg(p.borderRadius)
+        .arg(p.accentPrimary)
+        .arg(p.accentPrimary)
+        .arg(p.accentHover)
+        .arg(p.accentPressed)
+        .arg(p.highlight)
+        .arg(p.splitter);
+
+    setStyleSheet(style);
 }
 
 void MainWindow::createMainUI() {
@@ -210,6 +309,9 @@ void MainWindow::createMainUI() {
     m_autoReconnectCheckBox = new QCheckBox("Auto-reconnect", m_connectionPanel);
     m_autoReconnectCheckBox->setChecked(m_autoReconnectEnabled);
 
+    m_themeToggleCheckBox = new QCheckBox("Alt theme", m_connectionPanel);
+    m_themeToggleCheckBox->setChecked(m_useThemeB);
+
     m_connectButton = new QPushButton("Connect", m_connectionPanel);
     m_disconnectButton = new QPushButton("Disconnect", m_connectionPanel);
     m_disconnectButton->setEnabled(false);
@@ -229,6 +331,10 @@ void MainWindow::createMainUI() {
                 m_connectionStatusLabel->setText("Auto-reconnect disabled");
             }
         }
+    });
+    connect(m_themeToggleCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
+        setTheme(checked);
+        m_configManager->saveThemePreference(checked);
     });
     connect(m_serverPreset, &QComboBox::currentIndexChanged, this, [this](int) {
         const QVariantList values = m_serverPreset->currentData().toList();
@@ -259,6 +365,7 @@ void MainWindow::createMainUI() {
 
     connectionLayout->addRow("", m_tlsCheckBox);
     connectionLayout->addRow("", m_autoReconnectCheckBox);
+    connectionLayout->addRow("", m_themeToggleCheckBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
     QHBoxLayout* connectionButtonRow = new QHBoxLayout();
@@ -422,12 +529,16 @@ void MainWindow::updateAutoReconnectIndicator() {
         return;
     }
 
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+
     if (m_autoReconnectEnabled) {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: ON");
-        m_autoReconnectIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #123524; color: #9be7b4; font-weight: 600;");
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
     } else {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: OFF");
-        m_autoReconnectIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #3a1f1f; color: #f1b3b3; font-weight: 600;");
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.errorBg).arg(p.error));
     }
 }
 
@@ -435,6 +546,8 @@ void MainWindow::updateRegistrationIndicator() {
     if (!m_registrationIndicatorLabel) {
         return;
     }
+
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
 
     if (!m_isConnected) {
         m_registrationIndicatorLabel->setText("");
@@ -444,13 +557,16 @@ void MainWindow::updateRegistrationIndicator() {
 
     if (m_registrationComplete) {
         m_registrationIndicatorLabel->setText("Registered");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #123524; color: #9be7b4; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
     } else if (m_registrationRequired) {
         m_registrationIndicatorLabel->setText("Registration required");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #3a2a10; color: #f0c080; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.warningBg).arg(p.warning));
     } else {
         m_registrationIndicatorLabel->setText("Registering...");
-        m_registrationIndicatorLabel->setStyleSheet("padding: 2px 8px; border-radius: 8px; background: #1a2240; color: #8090c0; font-weight: 600;");
+        m_registrationIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
+            .arg(p.borderRadiusSmall).arg(p.backgroundSecondary).arg(p.textSecondary));
     }
 }
 
@@ -1270,6 +1386,12 @@ void MainWindow::loadConfigurationSettings() {
     }
     updateAutoReconnectIndicator();
 
+    m_useThemeB = m_configManager->loadThemePreference();
+    setTheme(m_useThemeB);
+    if (m_themeToggleCheckBox) {
+        m_themeToggleCheckBox->setChecked(m_useThemeB);
+    }
+
     // Load previously joined channels
     QStringList previousChannels = m_configManager->getJoinedChannels();
     if (!previousChannels.isEmpty()) {
@@ -1394,4 +1516,42 @@ void MainWindow::onReconnectAttempt() {
     m_connection->sendNick(m_currentNickname);
     m_connection->sendUser(m_currentNickname, "Qt IRC Client");
     appendSystemMessage("Auto-reconnect: Reconnection attempt in progress...");
+}
+
+void MainWindow::setTheme(bool useThemeB) {
+    m_useThemeB = useThemeB;
+    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+
+    if (m_topicLabel) {
+        m_topicLabel->setStyleSheet(QString("background-color: %1; padding: 8px 10px; border-radius: %2px;").arg(p.backgroundSecondary).arg(p.borderRadius - 2));
+    }
+
+    if (m_chatDisplay) {
+        m_chatDisplay->setStyleSheet(QString("font-family: 'DejaVu Sans Mono', monospace; font-size: 11pt; background: %1; color: %2; border: 1px solid %3; border-radius: %4px;")
+            .arg(p.backgroundSecondary).arg(p.text).arg(p.border).arg(p.borderRadius));
+    }
+
+    if (m_statusBar) {
+        m_statusBar->setStyleSheet(QString("border-top: 1px solid %1; padding: 8px 10px; color: %2;").arg(p.border).arg(p.textSecondary));
+    }
+
+    if (m_connectionPanelToggleButton) {
+        m_connectionPanelToggleButton->setStyleSheet(QString(
+            "QPushButton {"
+            "  border-radius: %1px;"
+            "  padding: 0px;"
+            "  font-weight: 700;"
+            "  background: %2;"
+            "  color: %3;"
+            "}"
+            "QPushButton:hover {"
+            "  background: %4;"
+            "}"
+        ).arg(p.borderRadiusSmall).arg(p.accentSecondary).arg(p.text).arg(p.border));
+    }
+
+    applyStyle();
+    updateAutoReconnectIndicator();
+    updateRegistrationIndicator();
+    updateConnectionUi(m_isConnected);
 }

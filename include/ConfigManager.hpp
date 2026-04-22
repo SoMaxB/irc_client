@@ -34,6 +34,10 @@ public:
     void saveAutoReconnectEnabled(bool enabled);
     bool loadAutoReconnectEnabled() const;
 
+    // Theme preference
+    void saveThemePreference(bool useAltTheme);
+    bool loadThemePreference() const;
+
     // Server presets (custom ones, beyond defaults)
     void saveCustomPreset(const QString& name, const QString& server, int port, bool useTls);
     bool loadCustomPresets(QStringList& presetNames, QStringList& servers, QList<int>& ports, QList<bool>& tlsFlags);
@@ -52,5 +56,6 @@ private:
     static constexpr const char* LAST_USE_TLS = "Connection/LastUseTls";
     static constexpr const char* JOINED_CHANNELS = "Channels/JoinedChannels";
     static constexpr const char* AUTO_RECONNECT_ENABLED = "Preferences/AutoReconnectEnabled";
+    static constexpr const char* THEME_PREFERENCE = "Preferences/UseAltTheme";
     static constexpr const char* CUSTOM_PRESETS = "Presets/CustomPresets";
 };

@@ -81,6 +81,16 @@ bool ConfigManager::loadAutoReconnectEnabled() const {
     return m_settings->value(AUTO_RECONNECT_ENABLED, true).toBool();
 }
 
+void ConfigManager::saveThemePreference(bool useAltTheme) {
+    m_settings->setValue(THEME_PREFERENCE, useAltTheme);
+    m_settings->sync();
+    qDebug() << "Saved theme preference:" << useAltTheme;
+}
+
+bool ConfigManager::loadThemePreference() const {
+    return m_settings->value(THEME_PREFERENCE, false).toBool();
+}
+
 void ConfigManager::saveCustomPreset(const QString& name, const QString& server, int port, bool useTls) {
     QString groupKey = QString("Presets/") + name;
     m_settings->setValue(groupKey + "/Server", server);
