@@ -1072,6 +1072,28 @@ bool MainWindow::handleSlashCommand(const QString& message) {
         return true;
     }
 
+    if (parsed.type == CommandHandler::Type::Search) {
+        QString query = parsed.arg1.trimmed();
+        if (query.isEmpty()) {
+            m_statusBar->setText("Usage: /search text");
+            return true;
+        }
+        QString currentText = m_chatDisplay->toPlainText();
+        QStringList lines = currentText.split('\n', Qt::SkipEmptyParts);
+        int matchCount = 0;
+        for (const QString& line : lines) {
+            if (line.contains(query, Qt::CaseInsensitive)) {
+                matchCount++;
+            }
+        }
+        if (matchCount > 0) {
+            appendConversationLine("*", "[system] Found " + QString::number(matchCount) + " matches for: " + query);
+        } else {
+            appendConversationLine("*", "[system] No matches found for: " + query);
+        }
+        return true;
+    }
+
     if (parsed.type == CommandHandler::Type::Topic) {
         auto isChannelName = [](const QString& value) {
             return value.startsWith('#') || value.startsWith('&') ||
