@@ -126,7 +126,7 @@ MainWindow::MainWindow(QWidget* parent)
     
     setWindowTitle("IRC Client");
     setWindowIcon(QIcon()); // TODO: Add icon
-    resize(1200, 700);
+    resize(1200, 750);
     m_reconnectTimer->setSingleShot(true);
     setCentralWidget(m_centralWidget);
     setupUI();
@@ -321,6 +321,7 @@ void MainWindow::createMainUI() {
 
     connect(m_connectButton, &QPushButton::clicked, this, &MainWindow::onConnect);
     connect(m_disconnectButton, &QPushButton::clicked, this, &MainWindow::onDisconnect);
+
     connect(m_autoReconnectCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
         m_autoReconnectEnabled = checked;
         m_configManager->saveAutoReconnectEnabled(checked);
@@ -368,16 +369,6 @@ void MainWindow::createMainUI() {
     connectionLayout->addRow("", m_themeToggleCheckBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
-    QHBoxLayout* connectionButtonRow = new QHBoxLayout();
-    connectionButtonRow->setSpacing(12);
-    connectionButtonRow->addWidget(m_connectButton);
-    connectionButtonRow->addWidget(m_disconnectButton);
-    connectionButtonRow->addStretch();
-    connectionButtonRow->addWidget(m_autoReconnectIndicatorLabel);
-    connectionButtonRow->addWidget(m_registrationIndicatorLabel);
-    connectionButtonRow->addWidget(m_connectionStatusLabel);
-    connectionLayout->addRow(connectionButtonRow);
-
     m_serverPreset->setCurrentIndex(0);
     updateAutoReconnectIndicator();
     updateRegistrationIndicator();
@@ -388,6 +379,17 @@ void MainWindow::createMainUI() {
         setConnectionPanelExpanded(!m_connectionPanelExpanded);
     });
     setConnectionPanelExpanded(true);
+
+    // Connection status bar (outside connection panel)
+    QHBoxLayout* connectionStatusBar = new QHBoxLayout();
+    connectionStatusBar->setSpacing(12);
+    connectionStatusBar->addWidget(m_connectButton);
+    connectionStatusBar->addWidget(m_disconnectButton);
+    connectionStatusBar->addWidget(m_connectionStatusLabel);
+    connectionStatusBar->addStretch();
+    connectionStatusBar->addWidget(m_autoReconnectIndicatorLabel);
+    connectionStatusBar->addWidget(m_registrationIndicatorLabel);
+    mainLayout->addLayout(connectionStatusBar);
 
     // Top bar with topic
     m_topicLabel = new QLabel("Not connected", m_centralWidget);
@@ -458,7 +460,7 @@ void MainWindow::createMainUI() {
     QHBoxLayout* inputLayout = new QHBoxLayout();
     m_messageInput = new QLineEdit(this);
     m_messageInput->setPlaceholderText("Type a message and press Enter...");
-    m_messageInput->setMinimumHeight(30);
+    m_messageInput->setMinimumHeight(40);
     m_messageInput->setClearButtonEnabled(true);
     connect(m_messageInput, &QLineEdit::returnPressed, this, &MainWindow::onMessageSent);
 
