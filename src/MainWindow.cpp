@@ -147,6 +147,22 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     QMainWindow::closeEvent(event);
 }
 
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+    if (obj == m_autoReconnectIndicatorLabel && event->type() == QEvent::MouseButtonPress) {
+        m_autoReconnectEnabled = !m_autoReconnectEnabled;
+        m_configManager->saveAutoReconnectEnabled(m_autoReconnectEnabled);
+        updateAutoReconnectIndicator();
+        if (!m_autoReconnectEnabled) {
+            stopAutoReconnect();
+            if (m_connectionStatusLabel && !m_connection->isConnected()) {
+                m_connectionStatusLabel->setText("Auto-reconnect disabled");
+            }
+        }
+        return true;
+    }
+    return QMainWindow::eventFilter(obj, event);
+}
+
 void MainWindow::setupConnections() {
     connect(m_connection.get(), &IrcConnection::connected,
             this, &MainWindow::onConnected);
@@ -306,9 +322,6 @@ void MainWindow::createMainUI() {
     m_nickInput->setPlaceholderText("YourNick");
     m_nickInput->setText("QtClient");
 
-    m_autoReconnectCheckBox = new QCheckBox("Auto-reconnect", m_connectionPanel);
-    m_autoReconnectCheckBox->setChecked(m_autoReconnectEnabled);
-
     m_themeToggleCheckBox = new QCheckBox("Alt theme", m_connectionPanel);
     m_themeToggleCheckBox->setChecked(m_useThemeB);
 
@@ -322,17 +335,6 @@ void MainWindow::createMainUI() {
     connect(m_connectButton, &QPushButton::clicked, this, &MainWindow::onConnect);
     connect(m_disconnectButton, &QPushButton::clicked, this, &MainWindow::onDisconnect);
 
-    connect(m_autoReconnectCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
-        m_autoReconnectEnabled = checked;
-        m_configManager->saveAutoReconnectEnabled(checked);
-        updateAutoReconnectIndicator();
-        if (!checked) {
-            stopAutoReconnect();
-            if (m_connectionStatusLabel && !m_connection->isConnected()) {
-                m_connectionStatusLabel->setText("Auto-reconnect disabled");
-            }
-        }
-    });
     connect(m_themeToggleCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
         setTheme(checked);
         m_configManager->saveThemePreference(checked);
@@ -365,7 +367,6 @@ void MainWindow::createMainUI() {
     connectionLayout->addRow("Server / Port:", serverPortRow);
 
     connectionLayout->addRow("", m_tlsCheckBox);
-    connectionLayout->addRow("", m_autoReconnectCheckBox);
     connectionLayout->addRow("", m_themeToggleCheckBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
@@ -509,13 +510,17 @@ void MainWindow::updateAutoReconnectIndicator() {
 
     if (m_autoReconnectEnabled) {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: ON");
-        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
-            .arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString(
+            "padding: 4px 12px; border-radius: %1px; background: %2; color: %3; font-weight: 600; cursor: pointer;"
+        ).arg(p.borderRadiusSmall).arg(p.successBg).arg(p.success));
     } else {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: OFF");
-        m_autoReconnectIndicatorLabel->setStyleSheet(QString("padding: 2px 8px; border-radius: %1px; background: %2; color: %3; font-weight: 600;")
-            .arg(p.borderRadiusSmall).arg(p.errorBg).arg(p.error));
+        m_autoReconnectIndicatorLabel->setStyleSheet(QString(
+            "padding: 4px 12px; border-radius: %1px; background: %2; color: %3; font-weight: 600; cursor: pointer;"
+        ).arg(p.borderRadiusSmall).arg(p.errorBg).arg(p.error));
     }
+
+    m_autoReconnectIndicatorLabel->installEventFilter(this);
 }
 
 void MainWindow::updateRegistrationIndicator() {
@@ -1345,9 +1350,6 @@ void MainWindow::loadConfigurationSettings() {
     }
 
     m_autoReconnectEnabled = m_configManager->loadAutoReconnectEnabled();
-    if (m_autoReconnectCheckBox) {
-        m_autoReconnectCheckBox->setChecked(m_autoReconnectEnabled);
-    }
     updateAutoReconnectIndicator();
 
     m_useThemeB = m_configManager->loadThemePreference();

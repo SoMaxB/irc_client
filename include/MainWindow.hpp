@@ -34,6 +34,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
     void onConnected();
@@ -97,9 +98,8 @@ private:
     QComboBox* m_serverPreset = nullptr;
     QCheckBox* m_tlsCheckBox = nullptr;
     QLineEdit* m_serverInput = nullptr;
-    QSpinBox* m_portInput = nullptr;
+QSpinBox* m_portInput = nullptr;
     QLineEdit* m_nickInput = nullptr;
-    QCheckBox* m_autoReconnectCheckBox = nullptr;
     QCheckBox* m_themeToggleCheckBox = nullptr;
     QPushButton* m_connectButton = nullptr;
     QPushButton* m_disconnectButton = nullptr;
