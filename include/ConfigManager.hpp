@@ -35,8 +35,8 @@ public:
     bool loadAutoReconnectEnabled() const;
 
     // Theme preference
-    void saveThemePreference(bool useAltTheme);
-    bool loadThemePreference() const;
+    void saveThemePreference(int themeIndex);
+    int loadThemePreference() const;
 
     // Server presets (custom ones, beyond defaults)
     void saveCustomPreset(const QString& name, const QString& server, int port, bool useTls);

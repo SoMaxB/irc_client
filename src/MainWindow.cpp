@@ -31,6 +31,7 @@ bool isChannelTarget(const QString& name) {
 namespace ThemeColors {
 
 struct Palette {
+    QString name;
     QString background;
     QString backgroundSecondary;
     QString inputBg;
@@ -54,8 +55,9 @@ struct Palette {
     int splitterWidth;
 };
 
-Palette optionA() {
+Palette darkDefault() {
     Palette p;
+    p.name = "Dark Blue";
     p.background = "#121417";
     p.backgroundSecondary = "#171a21";
     p.inputBg = "#20242d";
@@ -80,8 +82,9 @@ Palette optionA() {
     return p;
 }
 
-Palette optionB() {
+Palette githubDark() {
     Palette p;
+    p.name = "GitHub Dark";
     p.background = "#0d1117";
     p.backgroundSecondary = "#161b22";
     p.inputBg = "#21262d";
@@ -106,8 +109,124 @@ Palette optionB() {
     return p;
 }
 
-Palette currentPalette(bool useThemeB) {
-    return useThemeB ? optionB() : optionA();
+Palette dracula() {
+    Palette p;
+    p.name = "Dracula";
+    p.background = "#282a36";
+    p.backgroundSecondary = "#343746";
+    p.inputBg = "#44475a";
+    p.border = "#6272a4";
+    p.text = "#f8f8f2";
+    p.textSecondary = "#bfbfbf";
+    p.accentPrimary = "#bd93f9";
+    p.accentHover = "#ff79c6";
+    p.accentPressed = "#8be9fd";
+    p.accentSecondary = "#44475a";
+    p.success = "#50fa7b";
+    p.successBg = "rgba(80, 250, 123, 0.15)";
+    p.warning = "#f1fa8c";
+    p.warningBg = "rgba(241, 250, 140, 0.15)";
+    p.error = "#ff5555";
+    p.errorBg = "rgba(255, 85, 85, 0.15)";
+    p.highlight = "#6272a4";
+    p.splitter = "#44475a";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+Palette monokai() {
+    Palette p;
+    p.name = "Monokai";
+    p.background = "#272822";
+    p.backgroundSecondary = "#3e3d32";
+    p.inputBg = "#49483e";
+    p.border = "#75715e";
+    p.text = "#f8f8f2";
+    p.textSecondary = "#a59f85";
+    p.accentPrimary = "#f92672";
+    p.accentHover = "#fd5b51";
+    p.accentPressed = "#ae81ff";
+    p.accentSecondary = "#49483e";
+    p.success = "#a6e22e";
+    p.successBg = "rgba(166, 226, 46, 0.15)";
+    p.warning = "#e6db74";
+    p.warningBg = "rgba(230, 219, 116, 0.15)";
+    p.error = "#f92672";
+    p.errorBg = "rgba(249, 38, 114, 0.15)";
+    p.highlight = "#49483e";
+    p.splitter = "#49483e";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+Palette solarizedDark() {
+    Palette p;
+    p.name = "Solarized Dark";
+    p.background = "#002b36";
+    p.backgroundSecondary = "#073642";
+    p.inputBg = "#094350";
+    p.border = "#586e75";
+    p.text = "#93a1a1";
+    p.textSecondary = "#657b83";
+    p.accentPrimary = "#268bd2";
+    p.accentHover = "#2aa7f3";
+    p.accentPressed = "#1c6ea8";
+    p.accentSecondary = "#094350";
+    p.success = "#859900";
+    p.successBg = "rgba(133, 153, 0, 0.15)";
+    p.warning = "#b58900";
+    p.warningBg = "rgba(181, 137, 0, 0.15)";
+    p.error = "#dc322f";
+    p.errorBg = "rgba(220, 50, 47, 0.15)";
+    p.highlight = "#2aa7f3";
+    p.splitter = "#073642";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+Palette cyberpunk() {
+    Palette p;
+    p.name = "Cyberpunk";
+    p.background = "#0d0d0d";
+    p.backgroundSecondary = "#1a1a1a";
+    p.inputBg = "#262626";
+    p.border = "#ff00ff";
+    p.text = "#ffffff";
+    p.textSecondary = "#bfbfbf";
+    p.accentPrimary = "#ff00ff";
+    p.accentHover = "#ff66ff";
+    p.accentPressed = "#cc00cc";
+    p.accentSecondary = "#262626";
+    p.success = "#00ff00";
+    p.successBg = "rgba(0, 255, 0, 0.15)";
+    p.warning = "#ffff00";
+    p.warningBg = "rgba(255, 255, 0, 0.15)";
+    p.error = "#ff0000";
+    p.errorBg = "rgba(255, 0, 0, 0.15)";
+    p.highlight = "#00ffff";
+    p.splitter = "#333333";
+    p.borderRadius = 12;
+    p.borderRadiusSmall = 8;
+    p.splitterWidth = 6;
+    return p;
+}
+
+QVector<Palette> allPalettes() {
+    return QVector<Palette>{darkDefault(), githubDark(), dracula(), monokai(), solarizedDark(), cyberpunk()};
+}
+
+Palette getPalette(int index) {
+    QVector<Palette> themes = allPalettes();
+    if (index < 0 || index >= themes.size()) {
+        return darkDefault();
+    }
+    return themes[index];
 }
 
 }
@@ -184,7 +303,7 @@ void MainWindow::setupUI() {
 }
 
 void MainWindow::applyStyle() {
-    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+    ThemeColors::Palette p = ThemeColors::getPalette(m_themeIndex);
     QString style = QString(R"(
         QMainWindow {
             background: %1;
@@ -322,8 +441,18 @@ void MainWindow::createMainUI() {
     m_nickInput->setPlaceholderText("YourNick");
     m_nickInput->setText("QtClient");
 
-    m_themeToggleCheckBox = new QCheckBox("Alt theme", m_connectionPanel);
-    m_themeToggleCheckBox->setChecked(m_useThemeB);
+    m_themeComboBox = new QComboBox(m_connectionPanel);
+    m_themeComboBox->setFixedWidth(140);
+    QVector<ThemeColors::Palette> themes = ThemeColors::allPalettes();
+    for (const auto& theme : themes) {
+        m_themeComboBox->addItem(theme.name);
+    }
+    m_themeComboBox->setCurrentIndex(m_themeIndex);
+
+    connect(m_themeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+        setTheme(index);
+        m_configManager->saveThemePreference(index);
+    });
 
     m_connectButton = new QPushButton("Connect", m_connectionPanel);
     m_disconnectButton = new QPushButton("Disconnect", m_connectionPanel);
@@ -335,10 +464,6 @@ void MainWindow::createMainUI() {
     connect(m_connectButton, &QPushButton::clicked, this, &MainWindow::onConnect);
     connect(m_disconnectButton, &QPushButton::clicked, this, &MainWindow::onDisconnect);
 
-    connect(m_themeToggleCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
-        setTheme(checked);
-        m_configManager->saveThemePreference(checked);
-    });
     connect(m_serverPreset, &QComboBox::currentIndexChanged, this, [this](int) {
         const QVariantList values = m_serverPreset->currentData().toList();
         if (values.size() >= 3) {
@@ -367,7 +492,7 @@ void MainWindow::createMainUI() {
     connectionLayout->addRow("Server / Port:", serverPortRow);
 
     connectionLayout->addRow("", m_tlsCheckBox);
-    connectionLayout->addRow("", m_themeToggleCheckBox);
+    connectionLayout->addRow("Theme:", m_themeComboBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
     m_serverPreset->setCurrentIndex(0);
@@ -506,7 +631,7 @@ void MainWindow::updateAutoReconnectIndicator() {
         return;
     }
 
-    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+    ThemeColors::Palette p = ThemeColors::getPalette(m_themeIndex);
 
     if (m_autoReconnectEnabled) {
         m_autoReconnectIndicatorLabel->setText("Auto-reconnect: ON");
@@ -528,7 +653,7 @@ void MainWindow::updateRegistrationIndicator() {
         return;
     }
 
-    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+    ThemeColors::Palette p = ThemeColors::getPalette(m_themeIndex);
 
     if (!m_isConnected) {
         m_registrationIndicatorLabel->setText("");
@@ -1352,10 +1477,10 @@ void MainWindow::loadConfigurationSettings() {
     m_autoReconnectEnabled = m_configManager->loadAutoReconnectEnabled();
     updateAutoReconnectIndicator();
 
-    m_useThemeB = m_configManager->loadThemePreference();
-    setTheme(m_useThemeB);
-    if (m_themeToggleCheckBox) {
-        m_themeToggleCheckBox->setChecked(m_useThemeB);
+    m_themeIndex = m_configManager->loadThemePreference();
+    setTheme(m_themeIndex);
+    if (m_themeComboBox) {
+        m_themeComboBox->setCurrentIndex(m_themeIndex);
     }
 
     // Load previously joined channels
@@ -1484,9 +1609,9 @@ void MainWindow::onReconnectAttempt() {
     appendSystemMessage("Auto-reconnect: Reconnection attempt in progress...");
 }
 
-void MainWindow::setTheme(bool useThemeB) {
-    m_useThemeB = useThemeB;
-    ThemeColors::Palette p = ThemeColors::currentPalette(m_useThemeB);
+void MainWindow::setTheme(int index) {
+    m_themeIndex = index;
+    ThemeColors::Palette p = ThemeColors::getPalette(m_themeIndex);
 
     if (m_topicLabel) {
         m_topicLabel->setStyleSheet(QString("background-color: %1; padding: 8px 10px; border-radius: %2px;").arg(p.backgroundSecondary).arg(p.borderRadius - 2));

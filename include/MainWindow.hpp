@@ -86,7 +86,7 @@ private:
     void removeConversation(const QString& channel, const QString& systemMessage, bool removeFromConfig);
     bool handleSlashCommand(const QString& message);
 
-    void setTheme(bool useThemeB);
+    void setTheme(int index);
 
     // UI Components
     QWidget* m_centralWidget = nullptr;
@@ -100,7 +100,7 @@ private:
     QLineEdit* m_serverInput = nullptr;
 QSpinBox* m_portInput = nullptr;
     QLineEdit* m_nickInput = nullptr;
-    QCheckBox* m_themeToggleCheckBox = nullptr;
+    QComboBox* m_themeComboBox = nullptr;
     QPushButton* m_connectButton = nullptr;
     QPushButton* m_disconnectButton = nullptr;
     QLabel* m_connectionStatusLabel = nullptr;
@@ -147,7 +147,7 @@ QSpinBox* m_portInput = nullptr;
     bool m_isConnected;
     bool m_registrationRequired;
     bool m_registrationComplete;
-    bool m_useThemeB = false;
+    int m_themeIndex = 0;
     QString m_currentChannel;
     QString m_currentNickname;
     QMap<QString, QStringList> m_conversationHistory;

@@ -81,14 +81,14 @@ bool ConfigManager::loadAutoReconnectEnabled() const {
     return m_settings->value(AUTO_RECONNECT_ENABLED, true).toBool();
 }
 
-void ConfigManager::saveThemePreference(bool useAltTheme) {
-    m_settings->setValue(THEME_PREFERENCE, useAltTheme);
+void ConfigManager::saveThemePreference(int themeIndex) {
+    m_settings->setValue(THEME_PREFERENCE, themeIndex);
     m_settings->sync();
-    qDebug() << "Saved theme preference:" << useAltTheme;
+    qDebug() << "Saved theme preference:" << themeIndex;
 }
 
-bool ConfigManager::loadThemePreference() const {
-    return m_settings->value(THEME_PREFERENCE, false).toBool();
+int ConfigManager::loadThemePreference() const {
+    return m_settings->value(THEME_PREFERENCE, 0).toInt();
 }
 
 void ConfigManager::saveCustomPreset(const QString& name, const QString& server, int port, bool useTls) {
