@@ -17,6 +17,7 @@ public:
         Quit,
         Pass,
         User,
+        Invite,
         Unknown,
         Invalid
     };

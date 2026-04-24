@@ -100,6 +100,10 @@ void IrcConnection::sendUser(const QString& username, const QString& realname) {
     sendRawCommand("USER " + username + " 0 * :" + realname);
 }
 
+void IrcConnection::sendInvite(const QString& nickname, const QString& channel) {
+    sendRawCommand("INVITE " + nickname + " " + channel);
+}
+
 void IrcConnection::sendJoin(const QString& channel) {
     sendRawCommand("JOIN " + channel);
 }

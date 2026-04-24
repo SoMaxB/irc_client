@@ -1194,6 +1194,21 @@ bool MainWindow::handleSlashCommand(const QString& message) {
         return true;
     }
 
+    if (parsed.type == CommandHandler::Type::Invite) {
+        QString target = parsed.arg1;
+        QString channel = m_currentChannel;
+        if (parsed.arg2.isEmpty() && channel.isEmpty()) {
+            m_statusBar->setText("Usage: /invite nick #channel");
+            return true;
+        }
+        if (!parsed.arg2.isEmpty()) {
+            channel = parsed.arg2;
+        }
+        m_connection->sendInvite(target, channel);
+        appendSystemMessage("INVITE " + target + " " + channel + " sent to server");
+        return true;
+    }
+
     m_statusBar->setText("Unknown command state. Available: " + CommandHandler::supportedCommandsSummary());
     return false;
 }
