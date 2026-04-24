@@ -489,9 +489,9 @@ void MainWindow::createMainUI() {
     serverPortLayout->setSpacing(8);
     serverPortLayout->addWidget(m_serverInput, 1);
     serverPortLayout->addWidget(m_portInput);
-    connectionLayout->addRow("Server / Port:", serverPortRow);
+    serverPortLayout->addWidget(m_tlsCheckBox);
+    connectionLayout->addRow("Server / Port / TLS:", serverPortRow);
 
-    connectionLayout->addRow("", m_tlsCheckBox);
     connectionLayout->addRow("Theme:", m_themeComboBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
