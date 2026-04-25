@@ -154,6 +154,17 @@ CommandHandler::ParsedCommand CommandHandler::parse(const QString& input) {
         return result;
     }
 
+    if (command == "mode") {
+        result.type = Type::Mode;
+        result.arg1 = parts.value(1).trimmed();
+        result.arg2 = parts.mid(2).join(" ");
+        result.valid = !result.arg1.isEmpty();
+        if (!result.valid) {
+            result.errorMessage = "Usage: /mode #channel [+modes] [params]";
+        }
+        return result;
+    }
+
     result.type = Type::Unknown;
     result.valid = false;
     result.errorMessage = "Unknown command: " + command + ". Available: " + supportedCommandsSummary();
@@ -161,7 +172,7 @@ CommandHandler::ParsedCommand CommandHandler::parse(const QString& input) {
 }
 
 QString CommandHandler::supportedCommandsSummary() {
-    return "/join, /part, /msg, /query, /me, /topic, /nick, /user, /pass, /invite, /raw, /search, /quit";
+    return "/join, /part, /msg, /query, /me, /topic, /nick, /user, /pass, /invite, /mode, /raw, /search, /quit";
 }
 
 QString CommandHandler::stripOptionalQuotes(QString value) {

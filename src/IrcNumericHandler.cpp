@@ -84,6 +84,21 @@ bool IrcNumericHandler::handle(const IrcMessage& msg, const Dependencies& deps) 
         return true;
     }
 
+    if (numeric == 324) {  // RPL_CHANNELMODEIS
+        qDebug() << "324 RAW: params:" << msg.params << "trailing:" << msg.trailing;
+        if (msg.params.size() >= 3) {
+            const QString channel = msg.params[1];
+            const QString modes = msg.params[2];
+            const QString modeParams = msg.params.size() >= 4 ? msg.params.mid(3).join(" ") : QString();
+            QString display = "Channel modes for " + channel + ": " + modes;
+            if (!modeParams.isEmpty()) {
+                display += " " + modeParams;
+            }
+            appendNumericSystemMessage(deps, 324, display, channel);
+        }
+        return true;
+    }
+
     if (numeric == 353) {  // RPL_NAMREPLY
         if (msg.params.size() >= 4) {
             const QString channel = msg.params[2];

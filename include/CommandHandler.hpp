@@ -18,6 +18,7 @@ public:
         Pass,
         User,
         Invite,
+        Mode,
         Unknown,
         Invalid
     };

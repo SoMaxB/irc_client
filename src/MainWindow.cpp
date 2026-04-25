@@ -1339,6 +1339,21 @@ bool MainWindow::handleSlashCommand(const QString& message) {
         return true;
     }
 
+    if (parsed.type == CommandHandler::Type::Mode) {
+        QString target = parsed.arg1;
+        QString modes = parsed.arg2;
+        if (target.isEmpty()) {
+            m_statusBar->setText("Usage: /mode #channel [+modes] [params]");
+            return true;
+        }
+        if (!target.startsWith('#') && !target.startsWith('&')) {
+            target = m_currentChannel.isEmpty() ? QString("#") + target : m_currentChannel;
+        }
+        m_connection->sendMode(target, modes);
+        appendSystemMessage("MODE " + target + (modes.isEmpty() ? "" : " " + modes) + " sent to server");
+        return true;
+    }
+
     m_statusBar->setText("Unknown command state. Available: " + CommandHandler::supportedCommandsSummary());
     return false;
 }

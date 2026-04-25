@@ -41,6 +41,7 @@ public:
     void sendNick(const QString& nickname);
     void sendUser(const QString& username, const QString& realname);
     void sendInvite(const QString& nickname, const QString& channel);
+    void sendMode(const QString& target, const QString& modes = QString());
     void sendJoin(const QString& channel);
     void sendPart(const QString& channel, const QString& reason = QString());
     void sendPrivmsg(const QString& target, const QString& message);

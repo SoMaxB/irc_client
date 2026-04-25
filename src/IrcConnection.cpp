@@ -104,6 +104,14 @@ void IrcConnection::sendInvite(const QString& nickname, const QString& channel) 
     sendRawCommand("INVITE " + nickname + " " + channel);
 }
 
+void IrcConnection::sendMode(const QString& target, const QString& modes) {
+    if (modes.isEmpty()) {
+        sendRawCommand("MODE " + target);
+    } else {
+        sendRawCommand("MODE " + target + " " + modes);
+    }
+}
+
 void IrcConnection::sendJoin(const QString& channel) {
     sendRawCommand("JOIN " + channel);
 }
