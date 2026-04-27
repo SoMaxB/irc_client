@@ -419,11 +419,11 @@ void MainWindow::createMainUI() {
     connectionTitle->setFont(titleFont);
 
     m_serverPreset = new QComboBox(m_connectionPanel);
+    m_serverPreset->addItem("Custom");
     m_serverPreset->addItem("Libera.Chat TLS (recommended)", QVariantList{QString("irc.libera.chat"), 6697, true});
     m_serverPreset->addItem("OFTC TLS", QVariantList{QString("irc.oftc.net"), 6697, true});
     m_serverPreset->addItem("Libera.Chat plain", QVariantList{QString("irc.libera.chat"), 6667, false});
     m_serverPreset->addItem("OFTC plain", QVariantList{QString("irc.oftc.net"), 6667, false});
-    m_serverPreset->addItem("Custom");
 
     m_tlsCheckBox = new QCheckBox("Use TLS", m_connectionPanel);
 
@@ -442,7 +442,7 @@ void MainWindow::createMainUI() {
     m_nickInput->setText("QtClient");
 
     m_themeComboBox = new QComboBox(m_connectionPanel);
-    m_themeComboBox->setFixedWidth(140);
+    m_themeComboBox->setFixedWidth(180);
     QVector<ThemeColors::Palette> themes = ThemeColors::allPalettes();
     for (const auto& theme : themes) {
         m_themeComboBox->addItem(theme.name);
@@ -455,14 +455,11 @@ void MainWindow::createMainUI() {
     });
 
     m_connectButton = new QPushButton("Connect", m_connectionPanel);
-    m_disconnectButton = new QPushButton("Disconnect", m_connectionPanel);
-    m_disconnectButton->setEnabled(false);
     m_connectionStatusLabel = new QLabel("Disconnected", m_connectionPanel);
     m_autoReconnectIndicatorLabel = new QLabel(m_connectionPanel);
     m_registrationIndicatorLabel = new QLabel(m_connectionPanel);
 
     connect(m_connectButton, &QPushButton::clicked, this, &MainWindow::onConnect);
-    connect(m_disconnectButton, &QPushButton::clicked, this, &MainWindow::onDisconnect);
 
     connect(m_serverPreset, &QComboBox::currentIndexChanged, this, [this](int) {
         const QVariantList values = m_serverPreset->currentData().toList();
@@ -481,7 +478,15 @@ void MainWindow::createMainUI() {
     });
 
     connectionLayout->addRow(connectionTitle);
-    connectionLayout->addRow("Preset:", m_serverPreset);
+
+    QWidget* presetThemeRow = new QWidget(m_connectionPanel);
+    QHBoxLayout* presetThemeLayout = new QHBoxLayout(presetThemeRow);
+    presetThemeLayout->setContentsMargins(0, 0, 0, 0);
+    presetThemeLayout->setSpacing(8);
+    presetThemeLayout->addWidget(m_serverPreset, 1);
+    presetThemeLayout->addWidget(new QLabel("Theme:", m_connectionPanel));
+    presetThemeLayout->addWidget(m_themeComboBox);
+    connectionLayout->addRow("Preset:", presetThemeRow);
 
     QWidget* serverPortRow = new QWidget(m_connectionPanel);
     QHBoxLayout* serverPortLayout = new QHBoxLayout(serverPortRow);
@@ -492,7 +497,6 @@ void MainWindow::createMainUI() {
     serverPortLayout->addWidget(m_tlsCheckBox);
     connectionLayout->addRow("Server / Port / TLS:", serverPortRow);
 
-    connectionLayout->addRow("Theme:", m_themeComboBox);
     connectionLayout->addRow("Nickname:", m_nickInput);
 
     m_serverPreset->setCurrentIndex(0);
@@ -510,7 +514,6 @@ void MainWindow::createMainUI() {
     QHBoxLayout* connectionStatusBar = new QHBoxLayout();
     connectionStatusBar->setSpacing(12);
     connectionStatusBar->addWidget(m_connectButton);
-    connectionStatusBar->addWidget(m_disconnectButton);
     connectionStatusBar->addWidget(m_connectionStatusLabel);
     connectionStatusBar->addStretch();
     connectionStatusBar->addWidget(m_autoReconnectIndicatorLabel);
@@ -609,8 +612,8 @@ void MainWindow::createMainUI() {
 
 void MainWindow::updateConnectionUi(bool connected) {
     m_isConnected = connected;
-    m_connectButton->setEnabled(!connected);
-    m_disconnectButton->setEnabled(connected);
+    m_connectButton->setText(connected ? "Disconnect" : "Connect");
+    m_connectButton->setEnabled(true);
     m_serverInput->setEnabled(!connected);
     m_portInput->setEnabled(!connected);
     m_nickInput->setEnabled(!connected);
@@ -624,6 +627,30 @@ void MainWindow::updateConnectionUi(bool connected) {
     if (m_topicLabel) {
         m_topicLabel->setText(connected ? "Connected" : "Not connected");
     }
+
+    ThemeColors::Palette p = ThemeColors::getPalette(m_themeIndex);
+    QString buttonColor = connected ? p.accentSecondary : p.accentPrimary;
+    QString buttonHover = connected ? p.accentSecondary : p.accentHover;
+    m_connectButton->setStyleSheet(QString(
+        "QPushButton {"
+        "   background-color: %1;"
+        "   color: white;"
+        "   border: none;"
+        "   padding: 8px 16px;"
+        "   border-radius: %2px;"
+        "   font-weight: 600;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: %3;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: %4;"
+        "}"
+        "QPushButton:disabled {"
+        "   background-color: %5;"
+        "   color: %6;"
+        "}"
+    ).arg(buttonColor).arg(p.borderRadiusSmall).arg(buttonHover).arg(p.accentPressed).arg(p.backgroundSecondary).arg(p.textSecondary));
 }
 
 void MainWindow::updateAutoReconnectIndicator() {
@@ -703,6 +730,11 @@ void MainWindow::setConnectionPanelExpanded(bool expanded) {
 }
 
 void MainWindow::onConnect() {
+    if (m_isConnected) {
+        onDisconnect();
+        return;
+    }
+
     QString server = m_serverInput->text().trimmed();
     quint16 port = static_cast<quint16>(m_portInput->value());
     bool useTls = m_tlsCheckBox->isChecked();
@@ -736,7 +768,8 @@ void MainWindow::onConnect() {
 void MainWindow::onDisconnect() {
     m_manualDisconnectRequested = true;
     m_pendingRejoinChannels.clear();
-    stopAutoReconnect();  // Stop any auto-reconnect attempts when user manually disconnects
+    stopAutoReconnect();
+    setConnectionPanelExpanded(true);
     if (m_connection->isConnected()) {
         m_connection->sendQuit("Client disconnecting");
         m_connection->disconnect();
