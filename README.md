@@ -13,7 +13,7 @@ A modern, minimalist IRC client built with Qt6 and C++17. This project is a grap
 - **User List by Channel**: Right pane user list updates dynamically for the active channel
 - **Auto-normalization**: Channel names automatically prefixed with `#` if missing
 - **Private Messages**: Distinguished from channel messages and routed to dedicated private buffers
-- **Slash Commands**: Supports `/join`, `/part`, `/msg`, `/query`, `/me`, `/topic`, `/nick`, `/user`, `/pass`, `/raw`, `/search`, and `/quit`
+- **Slash Commands**: Supports `/join`, `/part`, `/msg`, `/query`, `/me`, `/topic`, `/nick`, `/user`, `/pass`, `/raw`, `/search`, `/quit`, `/invite`, and `/mode`
 - **History Search**: Search and jump through the active conversation history
 - **Configuration Persistence**: Saves last server, port, nickname, and joined channels automatically
 - **Auto-reconnect**: Automatically reconnects on disconnect with exponential backoff (up to 10 attempts)
@@ -127,6 +127,8 @@ The IRC protocol supports the following commands via the GUI and slash commands:
 - `PART [#channel]` - Leave a channel (click Remove or use `/part`)
 - `PRIVMSG target message` - Send private message or channel message
 - `QUERY nick` - Open a private conversation buffer without sending a message
+- `INVITE nick [#channel]` - Invite a user to a channel
+- `MODE #channel [+modes] [params]` - Set channel modes (requires op)
 - `ME action` - Send an IRC action message in the active buffer
 - `SEARCH text` - Find text in the current conversation history and jump between matches
 - `TOPIC [#channel] [new topic]` - View or set channel topic (uses current channel when omitted)
@@ -292,6 +294,20 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 - [ ] Test with live IRC server (Libera.Chat, OFTC) after significant changes
 - [ ] Run `cmake --build build -j2` to verify compilation before commits
 - [ ] Add/expand tests as protocol and UI logic grow
+
+## Changelog
+
+### v0.5.0 - Initial Public Release
+- Modern Qt6 GUI with 3-pane layout (channels, chat, users)
+- TLS and plain IRC connections
+- Channel buffers + private message buffers with unread counters
+- Slash commands: join, part, msg, query, me, topic, nick, user, pass, invite, mode, raw, search, quit
+- Connection presets for Libera.Chat and OFTC
+- Configuration persistence (last server, nick, channels)
+- Auto-reconnect with exponential backoff
+- IrcNumericHandler for server reply coverage (welcome, names, topic, errors, 4xx/5xx)
+- Theme selector with 6 color schemes
+- Unified Connect/Disconnect button
 
 ## License
 
