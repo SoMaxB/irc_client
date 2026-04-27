@@ -17,6 +17,7 @@ A modern, minimalist IRC client built with Qt6 and C++17. This project is a grap
 - **History Search**: Search and jump through the active conversation history
 - **Configuration Persistence**: Saves last server, port, nickname, and joined channels automatically
 - **Auto-reconnect**: Automatically reconnects on disconnect with exponential backoff (up to 10 attempts)
+- **Desktop Notifications**: System tray notifications for mentions and private messages when window is not focused
 - **Memory Safe**: RAII principles, no memory leaks
 - **C++17 Features**: Modern C++ with smart pointers and move semantics
 
@@ -296,6 +297,11 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 - [ ] Add/expand tests as protocol and UI logic grow
 
 ## Changelog
+
+### v0.6.0 - Desktop Notifications
+- System tray icon with notification support
+- Desktop notifications for mentions and private messages
+- Toggle notifications checkbox in connection status bar
 
 ### v0.5.0 - Initial Public Release
 - Modern Qt6 GUI with 3-pane layout (channels, chat, users)

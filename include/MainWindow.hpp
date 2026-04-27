@@ -16,6 +16,7 @@
 #include <QCloseEvent>
 #include <QMap>
 #include <QStringList>
+#include <QSystemTrayIcon>
 #include <memory>
 #include "IrcConnection.hpp"
 #include "ChannelModel.hpp"
@@ -87,6 +88,14 @@ private:
     bool handleSlashCommand(const QString& message);
 
     void setTheme(int index);
+    void showNotification(const QString& title, const QString& message);
+
+    // Tray icon
+    void setupTrayIcon();
+    void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    std::unique_ptr<QSystemTrayIcon> m_trayIcon;
+    QCheckBox* m_notificationsCheckBox = nullptr;
+    bool m_notificationsEnabled = true;
 
     // UI Components
     QWidget* m_centralWidget = nullptr;

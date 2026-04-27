@@ -16,6 +16,7 @@
 #include <QIcon>
 #include <QMessageBox>
 #include <QSizePolicy>
+#include <QSystemTrayIcon>
 
 namespace {
 
@@ -248,6 +249,7 @@ MainWindow::MainWindow(QWidget* parent)
     resize(1200, 750);
     m_reconnectTimer->setSingleShot(true);
     setCentralWidget(m_centralWidget);
+    setupTrayIcon();
     setupUI();
     loadConfigurationSettings();
     setupConnections();
@@ -458,6 +460,11 @@ void MainWindow::createMainUI() {
     m_connectionStatusLabel = new QLabel("Disconnected", m_connectionPanel);
     m_autoReconnectIndicatorLabel = new QLabel(m_connectionPanel);
     m_registrationIndicatorLabel = new QLabel(m_connectionPanel);
+    m_notificationsCheckBox = new QCheckBox("Notifications", m_connectionPanel);
+    m_notificationsCheckBox->setChecked(m_notificationsEnabled);
+    connect(m_notificationsCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
+        m_notificationsEnabled = checked;
+    });
 
     connect(m_connectButton, &QPushButton::clicked, this, &MainWindow::onConnect);
 
@@ -518,6 +525,7 @@ void MainWindow::createMainUI() {
     connectionStatusBar->addStretch();
     connectionStatusBar->addWidget(m_autoReconnectIndicatorLabel);
     connectionStatusBar->addWidget(m_registrationIndicatorLabel);
+    connectionStatusBar->addWidget(m_notificationsCheckBox);
     mainLayout->addLayout(connectionStatusBar);
 
     // Top bar with topic
@@ -944,6 +952,18 @@ void MainWindow::onMessageReceived(const QString& rawMessage) {
 
             if (!conversation.isEmpty() && conversation != m_currentChannel) {
                 m_channelModel->incrementUnread(conversation);
+
+                // Show notification for mentions or private messages
+                if (m_notificationsEnabled && !m_currentNickname.isEmpty()) {
+                    const bool isMention = content.contains(m_currentNickname, Qt::CaseInsensitive);
+                    const bool isPrivate = (target.compare(m_currentNickname, Qt::CaseInsensitive) == 0);
+
+                    if (isPrivate) {
+                        showNotification("Private message from " + senderNick, content);
+                    } else if (isMention) {
+                        showNotification("Mentioned in " + conversation, senderNick + ": " + content);
+                    }
+                }
             }
 
             if (isActionMessage) {
@@ -1689,8 +1709,48 @@ void MainWindow::setTheme(int index) {
         ).arg(p.borderRadiusSmall).arg(p.accentSecondary).arg(p.text).arg(p.border));
     }
 
-    applyStyle();
+applyStyle();
     updateAutoReconnectIndicator();
     updateRegistrationIndicator();
-    updateConnectionUi(m_isConnected);
+
+    if (m_trayIcon) {
+        m_trayIcon->setToolTip("IRC Client");
+    }
+}
+
+void MainWindow::setupTrayIcon() {
+    if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+        qDebug() << "System tray not available on this platform";
+        return;
+    }
+
+    m_trayIcon = std::make_unique<QSystemTrayIcon>(this);
+    m_trayIcon->setToolTip("IRC Client");
+
+    QIcon icon;
+    m_trayIcon->setIcon(icon);
+    m_trayIcon->setVisible(true);
+
+    connect(m_trayIcon.get(), &QSystemTrayIcon::activated,
+            this, &MainWindow::onTrayIconActivated);
+}
+
+void MainWindow::showNotification(const QString& title, const QString& message) {
+    if (!m_trayIcon || !m_notificationsEnabled) {
+        return;
+    }
+
+    if (m_trayIcon->isVisible()) {
+        m_trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
+    }
+}
+
+void MainWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
+    if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
+        if (isMinimized()) {
+            showNormal();
+        }
+        raise();
+        activateWindow();
+    }
 }
