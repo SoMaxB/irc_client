@@ -302,6 +302,7 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 - System tray icon with notification support
 - Desktop notifications for mentions and private messages
 - Toggle notifications checkbox in connection status bar
+- Version label in status bar (bottom right)
 
 ### v0.5.0 - Initial Public Release
 - Modern Qt6 GUI with 3-pane layout (channels, chat, users)

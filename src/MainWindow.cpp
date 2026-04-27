@@ -608,7 +608,16 @@ void MainWindow::createMainUI() {
     m_statusBar = new QLabel(this);
     m_statusBar->setText("Disconnected. Enter a server above and connect.");
     m_statusBar->setStyleSheet("border-top: 1px solid #2a3040; padding: 8px 10px; color: #94a3b8;");
-    mainLayout->addWidget(m_statusBar);
+
+    QLabel* versionLabel = new QLabel("v0.6.0", m_centralWidget);
+    versionLabel->setStyleSheet("border-top: 1px solid #2a3040; padding: 8px 10px; color: #94a3b8;");
+    versionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+
+    QHBoxLayout* statusBarLayout = new QHBoxLayout();
+    statusBarLayout->addWidget(m_statusBar, 1);
+    statusBarLayout->addWidget(versionLabel);
+
+    mainLayout->addLayout(statusBarLayout);
 
     m_centralWidget->setLayout(mainLayout);
 
