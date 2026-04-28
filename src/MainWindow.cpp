@@ -273,6 +273,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
     if (obj == m_autoReconnectIndicatorLabel && event->type() == QEvent::MouseButtonPress) {
+        bool wasEnabled = m_autoReconnectEnabled;
         m_autoReconnectEnabled = !m_autoReconnectEnabled;
         m_configManager->saveAutoReconnectEnabled(m_autoReconnectEnabled);
         updateAutoReconnectIndicator();
@@ -280,6 +281,12 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
             stopAutoReconnect();
             if (m_connectionStatusLabel && !m_connection->isConnected()) {
                 m_connectionStatusLabel->setText("Auto-reconnect disabled");
+            }
+        } else {
+            if (m_connectionStatusLabel && !m_connection->isConnected()) {
+                if (wasEnabled != m_autoReconnectEnabled) {
+                    m_connectionStatusLabel->setText("Disconnected. Enter server and connect.");
+                }
             }
         }
         return true;
@@ -424,7 +431,7 @@ void MainWindow::createMainUI() {
     connectionTitle->setFont(titleFont);
 
     m_serverPreset = new QComboBox(m_connectionPanel);
-    m_serverPreset->setMinimumWidth(140);
+    m_serverPreset->setMinimumWidth(100);
     m_serverPreset->addItem("Custom");
     m_serverPreset->addItem("Libera.Chat TLS (recommended)", QVariantList{QString("irc.libera.chat"), 6697, true});
     m_serverPreset->addItem("OFTC TLS", QVariantList{QString("irc.oftc.net"), 6697, true});
@@ -432,7 +439,7 @@ void MainWindow::createMainUI() {
     m_serverPreset->addItem("OFTC plain", QVariantList{QString("irc.oftc.net"), 6667, false});
 
     m_managePresetsButton = new QPushButton("Manage", m_connectionPanel);
-    m_managePresetsButton->setFixedWidth(90);
+    m_managePresetsButton->setFixedWidth(110);
     connect(m_managePresetsButton, &QPushButton::clicked, this, &MainWindow::createPresetManagementDialog);
 
     m_tlsCheckBox = new QCheckBox("Use TLS", m_connectionPanel);
@@ -452,7 +459,7 @@ void MainWindow::createMainUI() {
     m_nickInput->setText("QtClient");
 
     m_themeComboBox = new QComboBox(m_connectionPanel);
-    m_themeComboBox->setFixedWidth(140);
+    m_themeComboBox->setFixedWidth(160);
     QVector<ThemeColors::Palette> themes = ThemeColors::allPalettes();
     for (const auto& theme : themes) {
         m_themeComboBox->addItem(theme.name);
@@ -511,7 +518,7 @@ void MainWindow::createMainUI() {
     serverPortLayout->addWidget(m_serverInput, 1);
     serverPortLayout->addWidget(m_portInput);
     serverPortLayout->addWidget(m_tlsCheckBox);
-    connectionLayout->addRow("Server / Port / TLS:", serverPortRow);
+    connectionLayout->addRow("Server / Port:", serverPortRow);
 
     connectionLayout->addRow("Nickname:", m_nickInput);
 
@@ -621,7 +628,7 @@ void MainWindow::createMainUI() {
     statusBarLayout->setContentsMargins(10, 8, 10, 8);
 
     m_statusBar = new QLabel(m_statusBarContainer);
-    m_statusBar->setText("Disconnected. Enter a server above and connect.");
+    m_statusBar->setText("Disconnected. Enter server and connect.");
 
     m_versionLabel = new QLabel("v0.7.0", m_statusBarContainer);
     m_versionLabel->setStyleSheet("background: transparent; color: #94a3b8;");
@@ -806,7 +813,7 @@ void MainWindow::onDisconnect() {
     updateConnectionUi(false);
     m_connectionStatusLabel->setText("Disconnected");
     if (m_statusBar) {
-        m_statusBar->setText("Disconnected. Enter a server above and connect.");
+        m_statusBar->setText("Disconnected. Enter server and connect.");
     }
 }
 
@@ -882,7 +889,7 @@ void MainWindow::onDisconnected() {
         m_connectionStatusLabel->setText("Disconnected");
     }
     if (m_statusBar) {
-        m_statusBar->setText("Disconnected. Enter a server above and connect.");
+        m_statusBar->setText("Disconnected. Enter server and connect.");
     }
     qDebug() << "Disconnected from server";
 
@@ -1736,6 +1743,29 @@ void MainWindow::setTheme(int index) {
             "  background: %4;"
             "}"
         ).arg(p.borderRadiusSmall).arg(p.accentSecondary).arg(p.text).arg(p.border));
+    }
+
+    if (m_connectButton) {
+        QString buttonBg = m_isConnected ? p.accentSecondary : p.accentPrimary;
+        QString buttonHover = m_isConnected ? p.accentSecondary : p.accentHover;
+        QString disabledBg = p.backgroundSecondary;
+        QString disabledColor = p.textSecondary;
+        m_connectButton->setStyleSheet(QString(
+            "QPushButton {"
+            "  border-radius: %1px;"
+            "  padding: 6px 16px;"
+            "  font-weight: 700;"
+            "  background: %2;"
+            "  color: %3;"
+            "}"
+            "QPushButton:hover {"
+            "  background: %4;"
+            "}"
+            "QPushButton:disabled {"
+            "  background: %5;"
+            "  color: %6;"
+            "}"
+        ).arg(p.borderRadiusSmall).arg(buttonBg).arg(p.text).arg(buttonHover).arg(disabledBg).arg(disabledColor));
     }
 
 applyStyle();
