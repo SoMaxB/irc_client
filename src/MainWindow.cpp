@@ -17,6 +17,8 @@
 #include <QMessageBox>
 #include <QSizePolicy>
 #include <QSystemTrayIcon>
+#include <QListWidget>
+#include <QListWidgetItem>
 
 namespace {
 
@@ -252,6 +254,7 @@ MainWindow::MainWindow(QWidget* parent)
     setupTrayIcon();
     setupUI();
     loadConfigurationSettings();
+    loadCustomPresets();
     setupConnections();
     applyStyle();
 }
@@ -427,15 +430,19 @@ void MainWindow::createMainUI() {
     m_serverPreset->addItem("Libera.Chat plain", QVariantList{QString("irc.libera.chat"), 6667, false});
     m_serverPreset->addItem("OFTC plain", QVariantList{QString("irc.oftc.net"), 6667, false});
 
+    m_managePresetsButton = new QPushButton("Manage", m_connectionPanel);
+    m_managePresetsButton->setFixedWidth(70);
+    connect(m_managePresetsButton, &QPushButton::clicked, this, &MainWindow::createPresetManagementDialog);
+
     m_tlsCheckBox = new QCheckBox("Use TLS", m_connectionPanel);
 
     m_serverInput = new QLineEdit(m_connectionPanel);
-    m_serverInput->setPlaceholderText("irc.libera.chat");
-    m_serverInput->setText("irc.libera.chat");
+    m_serverInput->setPlaceholderText("localhost");
+    m_serverInput->setText("localhost");
 
     m_portInput = new QSpinBox(m_connectionPanel);
     m_portInput->setRange(1, 65535);
-    m_portInput->setValue(6667);
+    m_portInput->setValue(6697);
     m_portInput->setButtonSymbols(QAbstractSpinBox::NoButtons);
     m_portInput->setMaximumWidth(110);
 
@@ -491,6 +498,7 @@ void MainWindow::createMainUI() {
     presetThemeLayout->setContentsMargins(0, 0, 0, 0);
     presetThemeLayout->setSpacing(8);
     presetThemeLayout->addWidget(m_serverPreset, 1);
+    presetThemeLayout->addWidget(m_managePresetsButton);
     presetThemeLayout->addWidget(new QLabel("Theme:", m_connectionPanel));
     presetThemeLayout->addWidget(m_themeComboBox);
     connectionLayout->addRow("Preset:", presetThemeRow);
@@ -614,7 +622,7 @@ void MainWindow::createMainUI() {
     m_statusBar = new QLabel(m_statusBarContainer);
     m_statusBar->setText("Disconnected. Enter a server above and connect.");
 
-    m_versionLabel = new QLabel("v0.6.0", m_statusBarContainer);
+    m_versionLabel = new QLabel("v0.7.0", m_statusBarContainer);
     m_versionLabel->setStyleSheet("background: transparent; color: #94a3b8;");
 
     statusBarLayout->addWidget(m_statusBar, 1);
@@ -1773,4 +1781,226 @@ void MainWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
         raise();
         activateWindow();
     }
+}
+
+void MainWindow::loadCustomPresets() {
+    QStringList presetNames;
+    QStringList servers;
+    QList<int> ports;
+    QList<bool> tlsFlags;
+
+    if (m_configManager->loadCustomPresets(presetNames, servers, ports, tlsFlags)) {
+        for (int i = 0; i < presetNames.size(); ++i) {
+            QVariantList data;
+            data.append(servers[i]);
+            data.append(ports[i]);
+            data.append(tlsFlags[i]);
+            m_serverPreset->addItem("★ " + presetNames[i], data);
+        }
+    }
+}
+
+void MainWindow::createPresetManagementDialog() {
+    QDialog* dialog = new QDialog(this);
+    dialog->setWindowTitle("Manage Presets");
+    dialog->setMinimumWidth(500);
+    dialog->setModal(true);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(dialog);
+
+    QLabel* headerLabel = new QLabel("Manage Custom Presets", dialog);
+    QFont headerFont = headerLabel->font();
+    headerFont.setPointSize(12);
+    headerFont.setBold(true);
+    headerLabel->setFont(headerFont);
+    mainLayout->addWidget(headerLabel);
+
+    QStringList currentPresetNames;
+    QStringList currentServers;
+    QList<int> currentPorts;
+    QList<bool> currentTlsFlags;
+    m_configManager->loadCustomPresets(currentPresetNames, currentServers, currentPorts, currentTlsFlags);
+
+    QListWidget* presetList = new QListWidget(dialog);
+    for (int i = 0; i < currentPresetNames.size(); ++i) {
+        QListWidgetItem* item = new QListWidgetItem(currentPresetNames[i], presetList);
+        QVariantList data;
+        data.append(currentServers[i]);
+        data.append(currentPorts[i]);
+        data.append(currentTlsFlags[i]);
+        item->setData(Qt::UserRole, data);
+    }
+    mainLayout->addWidget(presetList);
+
+    QFormLayout* formLayout = new QFormLayout();
+    QLineEdit* nameInput = new QLineEdit(dialog);
+    nameInput->setPlaceholderText("Preset name");
+    QLineEdit* serverInput = new QLineEdit(dialog);
+    serverInput->setPlaceholderText("irc.example.org");
+    QSpinBox* portInput = new QSpinBox(dialog);
+    portInput->setRange(1, 65535);
+    portInput->setValue(6697);
+    portInput->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    QCheckBox* tlsCheck = new QCheckBox("Use TLS", dialog);
+    tlsCheck->setChecked(true);
+
+    formLayout->addRow("Name:", nameInput);
+    formLayout->addRow("Server:", serverInput);
+    formLayout->addRow("Port:", portInput);
+    formLayout->addRow("", tlsCheck);
+    mainLayout->addLayout(formLayout);
+
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* addButton = new QPushButton("Add", dialog);
+    QPushButton* editButton = new QPushButton("Edit", dialog);
+    QPushButton* deleteButton = new QPushButton("Delete", dialog);
+
+    buttonLayout->addWidget(addButton);
+    buttonLayout->addWidget(editButton);
+    buttonLayout->addWidget(deleteButton);
+    buttonLayout->addStretch();
+    mainLayout->addLayout(buttonLayout);
+
+    auto updateButtons = [&]() {
+        bool hasSelection = presetList->currentItem() != nullptr;
+        editButton->setEnabled(hasSelection);
+        deleteButton->setEnabled(hasSelection);
+    };
+    connect(presetList, &QListWidget::itemSelectionChanged, this, updateButtons);
+    updateButtons();
+
+    connect(presetList, &QListWidget::itemClicked, this, [&]() {
+        int row = presetList->currentRow();
+        if (row >= 0 && row < currentPresetNames.size()) {
+            nameInput->setText(currentPresetNames[row]);
+            serverInput->setText(currentServers[row]);
+            portInput->setValue(currentPorts[row]);
+            tlsCheck->setChecked(currentTlsFlags[row]);
+        }
+    });
+
+    connect(addButton, &QPushButton::clicked, this, [&]() {
+        QString name = nameInput->text().trimmed();
+        QString server = serverInput->text().trimmed();
+        int port = portInput->value();
+        bool useTls = tlsCheck->isChecked();
+
+        if (name.isEmpty() || server.isEmpty()) {
+            QMessageBox::warning(this, "Error", "Name and server are required.");
+            return;
+        }
+        if (currentPresetNames.contains(name)) {
+            QMessageBox::warning(this, "Error", "A preset with this name already exists.");
+            return;
+        }
+
+        m_configManager->saveCustomPreset(name, server, port, useTls);
+
+        currentPresetNames.append(name);
+        currentServers.append(server);
+        currentPorts.append(port);
+        currentTlsFlags.append(useTls);
+
+        QListWidgetItem* item = new QListWidgetItem(name, presetList);
+        QVariantList data;
+        data.append(server);
+        data.append(port);
+        data.append(useTls);
+        item->setData(Qt::UserRole, data);
+
+        QVariantList comboData;
+        comboData.append(server);
+        comboData.append(port);
+        comboData.append(useTls);
+        m_serverPreset->addItem("★ " + name, comboData);
+
+        nameInput->clear();
+        serverInput->clear();
+        portInput->setValue(6697);
+        tlsCheck->setChecked(true);
+        presetList->setCurrentRow(presetList->count() - 1);
+    });
+
+    connect(editButton, &QPushButton::clicked, this, [&]() {
+        int row = presetList->currentRow();
+        if (row < 0 || row >= currentPresetNames.size()) return;
+
+        QString name = nameInput->text().trimmed();
+        QString server = serverInput->text().trimmed();
+        int port = portInput->value();
+        bool useTls = tlsCheck->isChecked();
+
+        if (name.isEmpty() || server.isEmpty()) {
+            QMessageBox::warning(this, "Error", "Name and server are required.");
+            return;
+        }
+
+        QString oldName = currentPresetNames[row];
+        m_configManager->removeCustomPreset(oldName);
+        m_configManager->saveCustomPreset(name, server, port, useTls);
+
+        currentPresetNames[row] = name;
+        currentServers[row] = server;
+        currentPorts[row] = port;
+        currentTlsFlags[row] = useTls;
+
+        QListWidgetItem* item = presetList->item(row);
+        item->setText(name);
+        QVariantList data;
+        data.append(server);
+        data.append(port);
+        data.append(useTls);
+        item->setData(Qt::UserRole, data);
+
+        for (int i = 0; i < m_serverPreset->count(); ++i) {
+            if (m_serverPreset->itemText(i) == "★ " + oldName) {
+                m_serverPreset->setItemText(i, "★ " + name);
+                QVariantList comboData;
+                comboData.append(server);
+                comboData.append(port);
+                comboData.append(useTls);
+                m_serverPreset->setItemData(i, comboData);
+                break;
+            }
+        }
+    });
+
+    connect(deleteButton, &QPushButton::clicked, this, [&]() {
+        int row = presetList->currentRow();
+        if (row < 0 || row >= currentPresetNames.size()) return;
+
+        QString name = currentPresetNames[row];
+
+        QMessageBox confirm(this);
+        confirm.setWindowTitle("Confirm Delete");
+        confirm.setText("Delete preset \"" + name + "\"?");
+        confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        confirm.setDefaultButton(QMessageBox::No);
+        if (confirm.exec() != QMessageBox::Yes) return;
+
+        m_configManager->removeCustomPreset(name);
+
+        currentPresetNames.removeAt(row);
+        currentServers.removeAt(row);
+        currentPorts.removeAt(row);
+        currentTlsFlags.removeAt(row);
+
+        delete presetList->takeItem(row);
+
+        for (int i = 0; i < m_serverPreset->count(); ++i) {
+            if (m_serverPreset->itemText(i) == "★ " + name) {
+                m_serverPreset->removeItem(i);
+                break;
+            }
+        }
+
+        nameInput->clear();
+        serverInput->clear();
+        portInput->setValue(6697);
+        tlsCheck->setChecked(true);
+        updateButtons();
+    });
+
+    dialog->exec();
+    dialog->deleteLater();
 }

@@ -260,7 +260,7 @@ Run tests: `./build/run_tests`
 ## Future Enhancements
 
 ### [PRIORITY 1] Core Features
-- **Custom Preset Management UI**: Create/edit/remove server presets from the interface
+- **Custom Preset Management UI**: Create/edit/remove server presets from the interface (implemented)
 - **Reconnect Recovery**: Optional auto-rejoin of previously active channels after reconnect (implemented)
 - **Protocol Reply Coverage**: Improve handling of common IRC numerics and user-facing error feedback (in progress: welcome, names/topic, nick-in-use, join/send failures, registration/password/channel-ops errors, fallback for generic 4xx/5xx, and unified numeric message format)
 - **Command Handling Refactor**: Continue separating command parsing/dispatch from UI orchestration for easier testing and maintenance
@@ -302,6 +302,12 @@ Run tests: `./build/run_tests`
 - [ ] Add/expand tests as protocol and UI logic grow
 
 ## Changelog
+
+### v0.7.0 - Custom Preset Management
+- Custom preset management UI with Add/Edit/Delete functionality
+- Confirmation dialog before deleting presets
+- Custom presets shown with "★" marker in preset dropdown
+- Default connection values changed to localhost:6697
 
 ### v0.6.0 - Desktop Notifications
 - System tray icon with notification support

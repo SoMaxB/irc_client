@@ -86,6 +86,8 @@ private:
     void setCurrentConversation(const QString& conversation);
     void removeConversation(const QString& channel, const QString& systemMessage, bool removeFromConfig);
     bool handleSlashCommand(const QString& message);
+    void createPresetManagementDialog();
+    void loadCustomPresets();
 
     void setTheme(int index);
     void showNotification(const QString& title, const QString& message);
@@ -105,6 +107,7 @@ private:
     QPushButton* m_connectionPanelToggleButton = nullptr;
     bool m_connectionPanelExpanded = true;
     QComboBox* m_serverPreset = nullptr;
+    QPushButton* m_managePresetsButton = nullptr;
     QCheckBox* m_tlsCheckBox = nullptr;
     QLineEdit* m_serverInput = nullptr;
 QSpinBox* m_portInput = nullptr;
