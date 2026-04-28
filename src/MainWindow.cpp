@@ -604,20 +604,23 @@ void MainWindow::createMainUI() {
     inputLayout->addWidget(m_messageInput);
     mainLayout->addLayout(inputLayout);
 
-    // Status bar
-    m_statusBar = new QLabel(this);
+    // Status bar - container with border handled in setTheme()
+    m_statusBarContainer = new QWidget(m_centralWidget);
+    m_statusBarContainer->setStyleSheet("background: #171a21;");
+
+    QHBoxLayout* statusBarLayout = new QHBoxLayout(m_statusBarContainer);
+    statusBarLayout->setContentsMargins(10, 8, 10, 8);
+
+    m_statusBar = new QLabel(m_statusBarContainer);
     m_statusBar->setText("Disconnected. Enter a server above and connect.");
-    m_statusBar->setStyleSheet("border-top: 1px solid #2a3040; padding: 8px 10px; color: #94a3b8;");
 
-    QLabel* versionLabel = new QLabel("v0.6.0", m_centralWidget);
-    versionLabel->setStyleSheet("border-top: 1px solid #2a3040; padding: 8px 10px; color: #94a3b8;");
-    versionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    m_versionLabel = new QLabel("v0.6.0", m_statusBarContainer);
+    m_versionLabel->setStyleSheet("background: transparent; color: #94a3b8;");
 
-    QHBoxLayout* statusBarLayout = new QHBoxLayout();
     statusBarLayout->addWidget(m_statusBar, 1);
-    statusBarLayout->addWidget(versionLabel);
+    statusBarLayout->addWidget(m_versionLabel);
 
-    mainLayout->addLayout(statusBarLayout);
+    mainLayout->addWidget(m_statusBarContainer);
 
     m_centralWidget->setLayout(mainLayout);
 
@@ -1700,7 +1703,15 @@ void MainWindow::setTheme(int index) {
     }
 
     if (m_statusBar) {
-        m_statusBar->setStyleSheet(QString("border-top: 1px solid %1; padding: 8px 10px; color: %2;").arg(p.border).arg(p.textSecondary));
+        m_statusBar->setStyleSheet(QString("background: transparent; color: %1;").arg(p.textSecondary));
+    }
+
+    if (m_statusBarContainer) {
+        m_statusBarContainer->setStyleSheet(QString("background: %1;").arg(p.backgroundSecondary));
+    }
+
+    if (m_versionLabel) {
+        m_versionLabel->setStyleSheet(QString("background: transparent; color: %1;").arg(p.textSecondary));
     }
 
     if (m_connectionPanelToggleButton) {

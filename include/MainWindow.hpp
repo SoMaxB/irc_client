@@ -125,6 +125,8 @@ QSpinBox* m_portInput = nullptr;
     QListView* m_userList = nullptr;              // Right panel: users
     QLineEdit* m_messageInput = nullptr;          // Bottom: message input
     QLabel* m_statusBar = nullptr;
+    QWidget* m_statusBarContainer = nullptr;
+    QLabel* m_versionLabel = nullptr;
     QLabel* m_topicLabel = nullptr;               // Channel topic display
 
     // Search state
