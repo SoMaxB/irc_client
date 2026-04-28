@@ -424,7 +424,7 @@ void MainWindow::createMainUI() {
     connectionTitle->setFont(titleFont);
 
     m_serverPreset = new QComboBox(m_connectionPanel);
-    m_serverPreset->setMinimumWidth(180);
+    m_serverPreset->setMinimumWidth(140);
     m_serverPreset->addItem("Custom");
     m_serverPreset->addItem("Libera.Chat TLS (recommended)", QVariantList{QString("irc.libera.chat"), 6697, true});
     m_serverPreset->addItem("OFTC TLS", QVariantList{QString("irc.oftc.net"), 6697, true});
@@ -432,7 +432,7 @@ void MainWindow::createMainUI() {
     m_serverPreset->addItem("OFTC plain", QVariantList{QString("irc.oftc.net"), 6667, false});
 
     m_managePresetsButton = new QPushButton("Manage", m_connectionPanel);
-    m_managePresetsButton->setFixedWidth(80);
+    m_managePresetsButton->setFixedWidth(90);
     connect(m_managePresetsButton, &QPushButton::clicked, this, &MainWindow::createPresetManagementDialog);
 
     m_tlsCheckBox = new QCheckBox("Use TLS", m_connectionPanel);
