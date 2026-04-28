@@ -42,6 +42,7 @@ irc_client_cpp/
 │   ├── UserModel.cpp
 │   ├── ConfigManager.cpp
 │   └── CommandHandler.cpp
+├── tests/                 # Unit tests (Qt Test framework)
 ├── build/                 # Build output directory
 └── CMakeLists.txt         # Build configuration
 ```
@@ -176,7 +177,12 @@ The server will notify you in the chat window if it requires authentication or a
 
 ## Testing
 
-Currently no unit tests. Future: Add CppUnit or Catch2 framework.
+Unit tests using Qt Test framework covering core components:
+- **MessageParser**: IRC message parsing/serialization
+- **CommandHandler**: Slash command parsing/validation
+- **ConfigManager**: Configuration persistence
+
+Run tests: `./build/run_tests`
 
 ## Code Structure
 
@@ -249,7 +255,7 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 - **No IRCv3 capability negotiation**: Modern capability features are not yet implemented
 - **No desktop notifications**: Mentions/PMs do not trigger OS-level notifications
 - **Limited numeric reply handling**: Several IRC numerics and richer error surfaces are still pending
-- **No automated test suite yet**: There are currently no unit/integration tests
+- **No automated test suite**: Unit tests have been added
 
 ## Future Enhancements
 
@@ -274,10 +280,9 @@ Currently no unit tests. Future: Add CppUnit or Catch2 framework.
 - **Ignore/Block Lists**: Silently hide messages from specific users
 
 ### [PRIORITY 4] Testing & Quality
-- **Unit Tests**: Add Catch2 or CppUnit test framework
-- **Integration Tests**: Test with live IRC server (Libera.Chat, etc)
-- **Memory Profiling**: Valgrind checks for leaks
-- **Performance Benchmarks**: Measure network latency and UI responsiveness
+- Integration Tests: Test with live IRC server (Libera.Chat, etc)
+- Memory Profiling: Valgrind checks for leaks
+- Performance Benchmarks: Measure network latency and UI responsiveness
 
 ### [PRIORITY 5] Advanced Features
 - **Channel Favorites/Bookmarks**: Mark important channels for quick access
