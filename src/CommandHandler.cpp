@@ -165,6 +165,56 @@ CommandHandler::ParsedCommand CommandHandler::parse(const QString& input) {
         return result;
     }
 
+    if (command == "dcc") {
+        if (parts.size() < 2) {
+            result.errorMessage = "Usage: /dcc send nickname filename or /dcc list or /dcc accept id or /dcc reject id";
+            result.valid = false;
+            return result;
+        }
+
+        QString dccSubcommand = parts.value(1).toLower();
+        if (dccSubcommand == "send") {
+            result.type = Type::DccSend;
+            result.arg1 = parts.value(2).trimmed();
+            result.arg2 = parts.value(3).trimmed();
+            result.valid = !result.arg1.isEmpty() && !result.arg2.isEmpty();
+            if (!result.valid) {
+                result.errorMessage = "Usage: /dcc send nickname filename";
+            }
+            return result;
+        }
+
+        if (dccSubcommand == "list") {
+            result.type = Type::DccList;
+            result.valid = true;
+            return result;
+        }
+
+        if (dccSubcommand == "accept") {
+            result.type = Type::DccAccept;
+            result.arg1 = parts.value(2).trimmed();
+            result.valid = !result.arg1.isEmpty();
+            if (!result.valid) {
+                result.errorMessage = "Usage: /dcc accept transfer_id";
+            }
+            return result;
+        }
+
+        if (dccSubcommand == "reject") {
+            result.type = Type::DccReject;
+            result.arg1 = parts.value(2).trimmed();
+            result.valid = !result.arg1.isEmpty();
+            if (!result.valid) {
+                result.errorMessage = "Usage: /dcc reject transfer_id";
+            }
+            return result;
+        }
+
+        result.errorMessage = "Unknown DCC subcommand. Use: send, list, accept, or reject";
+        result.valid = false;
+        return result;
+    }
+
     result.type = Type::Unknown;
     result.valid = false;
     result.errorMessage = "Unknown command: " + command + ". Available: " + supportedCommandsSummary();
@@ -172,7 +222,7 @@ CommandHandler::ParsedCommand CommandHandler::parse(const QString& input) {
 }
 
 QString CommandHandler::supportedCommandsSummary() {
-    return "/join, /part, /msg, /query, /me, /topic, /nick, /user, /pass, /invite, /mode, /raw, /search, /quit";
+    return "/join, /part, /msg, /query, /me, /topic, /nick, /user, /pass, /invite, /mode, /dcc, /raw, /search, /quit";
 }
 
 QString CommandHandler::stripOptionalQuotes(QString value) {

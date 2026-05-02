@@ -19,6 +19,13 @@
 #include <QSystemTrayIcon>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QFile>
+#include <QDir>
+#include <QFileDialog>
+#include <QHostAddress>
+#include <QInputDialog>
+#include <QNetworkInterface>
+#include <QCoreApplication>
 
 namespace {
 
@@ -241,6 +248,7 @@ MainWindow::MainWindow(QWidget* parent)
       m_userModel(std::make_unique<UserModel>(this)),
       m_connection(std::make_unique<IrcConnection>(this)),
       m_configManager(std::make_unique<ConfigManager>()),
+      m_dccHandler(std::make_unique<DccHandler>(this)),
       m_reconnectTimer(std::make_unique<QTimer>(this)),
       m_isConnected(false),
       m_registrationRequired(false),
@@ -307,6 +315,16 @@ void MainWindow::setupConnections() {
     // Auto-reconnect timer
     connect(m_reconnectTimer.get(), &QTimer::timeout,
             this, &MainWindow::onReconnectAttempt);
+
+    // DCC transfer signals
+    connect(m_dccHandler.get(), &DccHandler::transferProgress,
+            this, &MainWindow::onDccTransferProgress);
+    connect(m_dccHandler.get(), &DccHandler::transferCompleted,
+            this, &MainWindow::onDccTransferCompleted);
+    connect(m_dccHandler.get(), &DccHandler::transferFailed,
+            this, &MainWindow::onDccTransferFailed);
+    connect(m_dccHandler.get(), &DccHandler::dccRequestReceived,
+            this, &MainWindow::onDccRequestReceived);
 }
 
 void MainWindow::setupUI() {
@@ -618,6 +636,15 @@ void MainWindow::createMainUI() {
     connect(m_messageInput, &QLineEdit::returnPressed, this, &MainWindow::onMessageSent);
 
     inputLayout->addWidget(m_messageInput);
+
+    // Send file button
+    QPushButton* sendFileButton = new QPushButton("📎", this);
+    sendFileButton->setToolTip("Send file via DCC");
+    sendFileButton->setMaximumWidth(40);
+    sendFileButton->setStyleSheet("QPushButton { background: #2b5cff; color: white; border: none; border-radius: 4px; padding: 4px; } QPushButton:hover { background: #3b6bff; }");
+    connect(sendFileButton, &QPushButton::clicked, this, &MainWindow::onSendFileClicked);
+
+    inputLayout->addWidget(sendFileButton);
     mainLayout->addLayout(inputLayout);
 
     // Status bar - container with border handled in setTheme()
@@ -877,6 +904,24 @@ void MainWindow::onConnected() {
         m_statusBar->setText("Connected. Join a channel to start chatting.");
     }
     rejoinPendingChannelsIfAny();
+
+    // Init DCC listener for incoming file transfers
+    QHostAddress localAddr;
+    QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
+    for (const QHostAddress& addr : addresses) {
+        if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
+            addr != QHostAddress::LocalHost) {
+            localAddr = addr;
+            break;
+        }
+    }
+    if (localAddr.isNull()) {
+        localAddr = QHostAddress::LocalHost;
+    }
+
+    // This just ensures DCC handler is ready - actual port will be obtained when sending
+    qDebug() << "DCC handler ready with local IP:" << localAddr.toString();
+
     qDebug() << "Connected signal received";
 }
 
@@ -998,6 +1043,31 @@ void MainWindow::onMessageReceived(const QString& rawMessage) {
                 displayMessage(conversation, senderNick, "* " + content);
             } else {
                 displayMessage(conversation, senderNick, content);
+            }
+
+            // Handle CTCP DCC requests
+            if (MessageParser::isDccSend(msg)) {
+                QMap<QString, QString> dcc = MessageParser::getDccSendDetails(msg);
+                if (!dcc.isEmpty()) {
+                    QString filename = dcc.value("argument");
+                    QString address = dcc.value("address");
+                    QString port = dcc.value("port");
+                    QString size = dcc.value("size");
+
+                    bool ok;
+                    quint32 filesize = size.toUInt(&ok);
+                    if (!ok) filesize = 0;
+
+                    qint64 addr = address.toLongLong();
+                    QHostAddress hostAddr(static_cast<quint32>(addr));
+                    quint16 portNum = static_cast<quint16>(port.toUShort());
+
+                    QString transferId = m_dccHandler->processIncomingDcc(
+                        senderNick, filename, filesize, hostAddr, portNum);
+
+                    appendSystemMessage(QString("DCC SEND from %1: %2 (%3 bytes)")
+                        .arg(senderNick, filename, QString::number(filesize)));
+                }
             }
         }
     } else if (msg.command == "JOIN") {
@@ -1435,6 +1505,51 @@ bool MainWindow::handleSlashCommand(const QString& message) {
         return true;
     }
 
+    if (parsed.type == CommandHandler::Type::DccSend) {
+        const QString& targetNick = parsed.arg1;
+        const QString& filename = parsed.arg2;
+
+        QFile file(filename);
+        if (!file.exists()) {
+            m_statusBar->setText("File not found: " + filename);
+            return false;
+        }
+
+        QHostAddress localAddr;
+        quint16 dccPort = 0;
+
+        m_dccHandler->initiateDccSend(filename, targetNick, localAddr, dccPort);
+
+        appendSystemMessage(QString("DCC SEND initiated: %1 to %2")
+            .arg(filename, targetNick));
+        return true;
+    }
+
+    if (parsed.type == CommandHandler::Type::DccList) {
+        QStringList transfers = m_dccHandler->getActiveTransfers();
+        if (transfers.isEmpty()) {
+            appendSystemMessage("No active DCC transfers");
+        } else {
+            appendSystemMessage("Active DCC transfers:");
+            for (const QString& id : transfers) {
+                appendSystemMessage("  " + m_dccHandler->getTransferInfo(id));
+            }
+        }
+        return true;
+    }
+
+    if (parsed.type == CommandHandler::Type::DccAccept) {
+        m_dccHandler->acceptIncomingTransfer(parsed.arg1);
+        appendSystemMessage("DCC transfer accepted: " + parsed.arg1);
+        return true;
+    }
+
+    if (parsed.type == CommandHandler::Type::DccReject) {
+        m_dccHandler->rejectIncomingTransfer(parsed.arg1);
+        appendSystemMessage("DCC transfer rejected: " + parsed.arg1);
+        return true;
+    }
+
     m_statusBar->setText("Unknown command state. Available: " + CommandHandler::supportedCommandsSummary());
     return false;
 }
@@ -1801,6 +1916,163 @@ void MainWindow::showNotification(const QString& title, const QString& message) 
 
     if (m_trayIcon->isVisible()) {
         m_trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
+    }
+}
+
+void MainWindow::handleDccRequest(const QString& nick, const QString& filename,
+                                 quint32 filesize, const QString& transferId) {
+    Q_UNUSED(transferId);
+    appendSystemMessage(QString("DCC file offer from %1: %2 (%3 bytes)")
+        .arg(nick, filename, QString::number(filesize)));
+}
+
+void MainWindow::onDccRequestReceived(const QString& nick, const QString& filename,
+                                       quint32 filesize, const QString& transferId) {
+    Q_UNUSED(transferId);
+    showDccTransferOffer(nick, filename, filesize);
+}
+
+void MainWindow::acceptDccTransfer(const QString& transferId) {
+    QStringList active = m_dccHandler->getActiveTransfers();
+    for (const QString& id : active) {
+        if (id.contains(transferId) || transferId.isEmpty()) {
+            m_dccHandler->acceptIncomingTransfer(id);
+            appendSystemMessage("DCC transfer accepted: " + id);
+            return;
+        }
+    }
+    appendSystemMessage("No active DCC transfer found: " + transferId);
+}
+
+void MainWindow::rejectDccTransfer(const QString& transferId) {
+    QStringList active = m_dccHandler->getActiveTransfers();
+    for (const QString& id : active) {
+        if (id.contains(transferId) || transferId.isEmpty()) {
+            m_dccHandler->rejectIncomingTransfer(id);
+            appendSystemMessage("DCC transfer rejected: " + id);
+            return;
+        }
+    }
+}
+
+void MainWindow::onDccTransferProgress(const QString& transferId,
+                                       qint64 bytes, qint64 total) {
+    Q_UNUSED(transferId);
+    if (total > 0) {
+        int percent = static_cast<int>((bytes * 100) / total);
+        appendSystemMessage(QString("DCC transfer: %1% (%2 / %3 bytes)")
+            .arg(percent)
+            .arg(bytes)
+            .arg(total));
+    }
+}
+
+void MainWindow::onDccTransferCompleted(const QString& transferId) {
+    QString info = m_dccHandler->getTransferInfo(transferId);
+    appendSystemMessage(QString("DCC transfer completed: %1").arg(info));
+}
+
+void MainWindow::onDccTransferFailed(const QString& transferId, const QString& error) {
+    Q_UNUSED(transferId);
+    appendSystemMessage(QString("DCC transfer failed: %1").arg(error));
+}
+
+void MainWindow::onSendFileClicked() {
+    if (!m_isConnected) {
+        m_statusBar->setText("Not connected to a server");
+        return;
+    }
+
+    if (m_currentNickname.isEmpty()) {
+        m_statusBar->setText("Set your nickname before sending files");
+        return;
+    }
+
+    QString filename = QFileDialog::getOpenFileName(
+        this, "Select file to send", QString(), "All files (*)");
+
+    if (filename.isEmpty()) {
+        return;
+    }
+
+    QFileInfo fileInfo(filename);
+    quint32 filesize = static_cast<quint32>(fileInfo.size());
+
+    bool ok;
+    QString targetNick = QInputDialog::getText(
+        this, "Send file", "Enter recipient nickname:",
+        QLineEdit::Normal, m_currentChannel, &ok);
+
+    if (!ok || targetNick.isEmpty()) {
+        return;
+    }
+
+    // Initiate DCC send - this starts the listener
+    m_dccHandler->initiateDccSend(filename, targetNick, QHostAddress(), 0);
+
+    quint16 port = m_dccHandler->getListenPort();
+    if (port == 0) {
+        m_statusBar->setText("Error: Could not start DCC listener");
+        return;
+    }
+
+    // Get local IP address
+    QHostAddress localAddr;
+    QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
+    for (const QHostAddress& addr : addresses) {
+        if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
+            addr != QHostAddress::LocalHost) {
+            localAddr = addr;
+            break;
+        }
+    }
+    if (localAddr.isNull()) {
+        localAddr = QHostAddress::LocalHost;
+    }
+
+    // Build IP in dotted decimal format
+    quint32 ipAddr = localAddr.toIPv4Address();
+    QString ipString = QString("%1.%2.%3.%4")
+        .arg((ipAddr >> 24) & 0xFF)
+        .arg((ipAddr >> 16) & 0xFF)
+        .arg((ipAddr >> 8) & 0xFF)
+        .arg(ipAddr & 0xFF);
+
+    // Send CTCP DCC SEND message
+    QChar ctcp = QChar(1);
+    QString dccMsg = QString("%1DCC SEND %2 %3 %4 %5%1")
+        .arg(ctcp)
+        .arg(fileInfo.fileName())
+        .arg(ipString)
+        .arg(port)
+        .arg(filesize)
+        .arg(ctcp);
+
+    m_connection->sendPrivmsg(targetNick, dccMsg);
+
+    appendSystemMessage(QString("DCC SEND: sending %1 (%2 bytes) to %3, port %4")
+        .arg(fileInfo.fileName(), QString::number(filesize), targetNick, QString::number(port)));
+}
+
+void MainWindow::showDccTransferOffer(const QString& nick, const QString& filename,
+                                         quint32 filesize) {
+    Q_UNUSED(filesize);
+
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("DCC File Transfer");
+    msgBox.setText(QString("Accept file from %1?").arg(nick));
+    msgBox.setInformativeText(QString("Filename: %1\nSize: %2 bytes")
+        .arg(filename, QString::number(filesize)));
+
+    QPushButton* acceptBtn = msgBox.addButton("Accept", QMessageBox::AcceptRole);
+    QPushButton* rejectBtn = msgBox.addButton("Reject", QMessageBox::RejectRole);
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == acceptBtn) {
+        m_dccHandler->acceptIncomingTransfer(m_dccHandler->getActiveTransfers().first());
+    } else if (msgBox.clickedButton() == rejectBtn) {
+        m_dccHandler->rejectIncomingTransfer(m_dccHandler->getActiveTransfers().first());
     }
 }
 

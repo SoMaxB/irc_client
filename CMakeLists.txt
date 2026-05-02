@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(IrcClientQt VERSION 1.0 LANGUAGES CXX)
+project(IrcClientQt VERSION 1.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,6 +27,7 @@ set(HEADERS
     include/ConfigManager.hpp
     include/CommandHandler.hpp
     include/IrcNumericHandler.hpp
+    include/DccHandler.hpp
 )
 
 # Sources
@@ -40,6 +41,7 @@ set(SOURCES
     src/ConfigManager.cpp
     src/CommandHandler.cpp
     src/IrcNumericHandler.cpp
+    src/DccHandler.cpp
 )
 
 # Test headers
@@ -88,6 +90,7 @@ target_sources(run_tests PRIVATE
     src/MessageParser.cpp
     src/CommandHandler.cpp
     src/ConfigManager.cpp
+    src/DccHandler.cpp
 )
 
 # Compiler warnings

@@ -65,4 +65,21 @@ public:
      * @brief Get numeric code if isNumericReply is true
      */
     static int getNumericCode(const IrcMessage& message);
+
+    /**
+     * @brief Parse a CTCP DCC message from PRIVMSG trailing
+     * @param trailing The trailing parameter (with \x01 delimiters)
+     * @return Map with parsed DCC data or empty if invalid
+     */
+    static QMap<QString, QString> parseDccMessage(const QString& trailing);
+
+    /**
+     * @brief Check if this is a DCC SEND request
+     */
+    static bool isDccSend(const IrcMessage& message);
+
+    /**
+     * @brief Extract DCC SEND details from message
+     */
+    static QMap<QString, QString> getDccSendDetails(const IrcMessage& message);
 };

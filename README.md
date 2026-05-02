@@ -18,6 +18,7 @@ A modern, minimalist IRC client built with Qt6 and C++17. This project is a grap
 - **Configuration Persistence**: Saves last server, port, nickname, and joined channels automatically
 - **Auto-reconnect**: Automatically reconnects on disconnect with exponential backoff (up to 10 attempts)
 - **Desktop Notifications**: System tray notifications for mentions and private messages when window is not focused
+- **DCC File Transfer**: Send and receive files directly between IRC clients
 - **Memory Safe**: RAII principles, no memory leaks
 - **C++17 Features**: Modern C++ with smart pointers and move semantics
 
@@ -32,7 +33,8 @@ irc_client_cpp/
 │   ├── ChannelModel.hpp   # Qt model for channels + unread counters
 │   ├── UserModel.hpp      # Qt model for users in active channel
 │   ├── ConfigManager.hpp  # QSettings persistence helpers
-│   └── CommandHandler.hpp # Slash command parser/validator
+│   ├── CommandHandler.hpp # Slash command parser/validator
+│   └── DccHandler.hpp    # DCC file transfer handler
 ├── src/                   # Implementation files
 │   ├── main.cpp
 │   ├── MainWindow.cpp
@@ -41,7 +43,8 @@ irc_client_cpp/
 │   ├── ChannelModel.cpp
 │   ├── UserModel.cpp
 │   ├── ConfigManager.cpp
-│   └── CommandHandler.cpp
+│   ├── CommandHandler.cpp
+│   └── DccHandler.cpp
 ├── tests/                 # Unit tests (Qt Test framework)
 ├── build/                 # Build output directory
 └── CMakeLists.txt         # Build configuration
@@ -137,6 +140,10 @@ The IRC protocol supports the following commands via the GUI and slash commands:
 - `NICK newnick` - Change nickname
 - `RAW command` - Send a raw IRC command for debugging or advanced use
 - `QUIT [reason]` - Disconnect and close (Disconnect button)
+- `DCC SEND nick file` - Send a file to a user via DCC
+- `DCC LIST` - List active DCC transfers
+- `DCC ACCEPT id` - Accept an incoming DCC transfer
+- `DCC REJECT id` - Reject an incoming DCC transfer
 
 ### Registration & Authentication Commands
 
@@ -167,6 +174,30 @@ If you connect to a server that requires registration:
 5. Now you should be able to join channels: `/join #channel`
 
 The server will notify you in the chat window if it requires authentication or additional steps.
+
+### DCC File Transfer
+
+DCC (Direct Client-to-Client) allows you to send and receive files directly between IRC users, bypassing the server.
+
+**Receiving Files:**
+When someone sends you a file via DCC, you'll see a system message showing:
+- The sender's nick
+- The filename
+- The file size
+
+Accept transfers with `/dcc accept transfer_id` or reject with `/dcc reject transfer_id`.
+
+**Sending Files:**
+Send a file to another user with `/dcc send nick filename`.
+
+**DCC Commands:**
+- `/dcc send <nick> <file>` - Send a file to another user
+- `/dcc list` - Show all active transfers
+- `/dcc accept <id>` - Accept an incoming transfer
+- `/dcc reject <id>` - Reject an incoming transfer
+- Files are saved to ~/Downloads by default
+
+The transfer progress is displayed in the system buffer as files transfer.
 
 ## Safety Features
 
@@ -224,6 +255,13 @@ Run tests: `./build/run_tests`
 - Prefix/operator/voice metadata
 - Sorting (operators first, then voiced, then alphabetical)
 
+### DccHandler.cpp/hpp (DCC File Transfer)
+- DCC SEND file transfer initiation and reception
+- TCP socket management for direct client-to-client connections
+- Transfer progress tracking and completion signals
+- File save location configuration (default: ~/Downloads)
+- Human-readable transfer status and progress display
+
 ## Reusing Code from ft_irc
 
 - Message parsing logic
@@ -248,7 +286,6 @@ Run tests: `./build/run_tests`
 ## Known Limitations
 
 - **No SASL authentication**: SASL mechanisms are not implemented
-- **No DCC file transfer**: File sharing is not implemented
 - **No unread "mentions" distinction**: Unread count does not currently separate mentions from general unread
 - **No ignore lists**: Cannot block users or hide messages
 - **No message logging to disk**: In-memory conversation history is not persisted as chat logs
@@ -302,6 +339,20 @@ Run tests: `./build/run_tests`
 - [ ] Add/expand tests as protocol and UI logic grow
 
 ## Changelog
+
+### v1.0.1 - DCC File Transfer Bugfix
+- Fixed DCC send then stops working after first transfer
+- Fixed client crash after receiving file completes
+- Memory management: use deleteLater() instead of direct delete
+- Added cleanup methods for stale transfers
+- Only active transfers shown in /dcc list
+
+### v0.7.1 - DCC File Transfer
+- DCC file transfer support (send and receive files directly)
+- DCC parsing in MessageParser (CTCP DCC SEND detection)
+- DCC slash commands: /dcc send, /dcc list, /dcc accept, /dcc reject
+- DCC transfer progress and completion notifications in chat
+- Updated architecture diagram with DccHandler component
 
 ### v0.7.0 - Custom Preset Management
 - Custom preset management UI with Add/Edit/Delete functionality

@@ -19,6 +19,10 @@ public:
         User,
         Invite,
         Mode,
+        DccSend,
+        DccAccept,
+        DccReject,
+        DccList,
         Unknown,
         Invalid
     };

@@ -137,3 +137,60 @@ int MessageParser::getNumericCode(const IrcMessage& message) {
     }
     return message.command.toInt();
 }
+
+QMap<QString, QString> MessageParser::parseDccMessage(const QString& trailing) {
+    QMap<QString, QString> result;
+
+    QString content = trailing;
+
+    // Handle CTCP-delimited format (\x01DCC SEND...\x01)
+    if (content.startsWith(QChar(1))) {
+        content = content.mid(1);
+        if (content.endsWith(QChar(1))) {
+            content.chop(1);
+        }
+    }
+
+    // Must start with DCC
+    if (!content.startsWith("DCC ")) {
+        return result;
+    }
+
+    content = content.mid(4);
+
+    QStringList parts = content.split(" ");
+    if (parts.size() < 4) {
+        return result;
+    }
+
+    result["type"] = parts[0];
+    result["argument"] = parts[1];
+    result["address"] = parts[2];
+    result["port"] = parts[3];
+
+    if (parts.size() >= 5) {
+        result["size"] = parts[4];
+    }
+
+    return result;
+}
+
+bool MessageParser::isDccSend(const IrcMessage& message) {
+    if (message.command != "PRIVMSG") {
+        return false;
+    }
+
+    if (message.params.size() < 2) {
+        return false;
+    }
+
+    QMap<QString, QString> dcc = parseDccMessage(message.params[1]);
+    return dcc.value("type") == "SEND";
+}
+
+QMap<QString, QString> MessageParser::getDccSendDetails(const IrcMessage& message) {
+    if (!isDccSend(message)) {
+        return QMap<QString, QString>();
+    }
+    return parseDccMessage(message.params[1]);
+}

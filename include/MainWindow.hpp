@@ -23,6 +23,7 @@
 #include "UserModel.hpp"
 #include "ConfigManager.hpp"
 #include "CommandHandler.hpp"
+#include "DccHandler.hpp"
 
 struct IrcMessage;
 
@@ -49,7 +50,7 @@ private slots:
     void onRemoveChannelRequested();
     void onChannelClicked(const QModelIndex& index);
     void onMessageSent();
-    void onReconnectAttempt();  // Auto-reconnect timer callback
+    void onReconnectAttempt();
 
 private:
     void setupUI();
@@ -92,6 +93,20 @@ private:
     void setTheme(int index);
     void showNotification(const QString& title, const QString& message);
 
+    // DCC file transfer
+    void handleDccRequest(const QString& nick, const QString& filename,
+                       quint32 filesize, const QString& transferId);
+    void acceptDccTransfer(const QString& transferId);
+    void rejectDccTransfer(const QString& transferId);
+    void onDccTransferProgress(const QString& transferId, qint64 bytes, qint64 total);
+    void onDccTransferCompleted(const QString& transferId);
+    void onDccTransferFailed(const QString& transferId, const QString& error);
+    void onDccRequestReceived(const QString& nick, const QString& filename,
+                            quint32 filesize, const QString& transferId);
+    void onSendFileClicked();
+    void showDccTransferOffer(const QString& nick, const QString& filename,
+                           quint32 filesize);
+
     // Tray icon
     void setupTrayIcon();
     void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -110,7 +125,7 @@ private:
     QPushButton* m_managePresetsButton = nullptr;
     QCheckBox* m_tlsCheckBox = nullptr;
     QLineEdit* m_serverInput = nullptr;
-QSpinBox* m_portInput = nullptr;
+    QSpinBox* m_portInput = nullptr;
     QLineEdit* m_nickInput = nullptr;
     QComboBox* m_themeComboBox = nullptr;
     QPushButton* m_connectButton = nullptr;
@@ -120,17 +135,17 @@ QSpinBox* m_portInput = nullptr;
     QLabel* m_registrationIndicatorLabel = nullptr;
     
     // Main UI components
-    QListView* m_channelList = nullptr;           // Left panel: channels
-    QLineEdit* m_joinChannelInput = nullptr;      // Left panel: join target
+    QListView* m_channelList = nullptr;
+    QLineEdit* m_joinChannelInput = nullptr;
     QPushButton* m_joinChannelButton = nullptr;
     QPushButton* m_removeChannelButton = nullptr;
-    QTextEdit* m_chatDisplay = nullptr;           // Center: message history
-    QListView* m_userList = nullptr;              // Right panel: users
-    QLineEdit* m_messageInput = nullptr;          // Bottom: message input
+    QTextEdit* m_chatDisplay = nullptr;
+    QListView* m_userList = nullptr;
+    QLineEdit* m_messageInput = nullptr;
     QLabel* m_statusBar = nullptr;
     QWidget* m_statusBarContainer = nullptr;
     QLabel* m_versionLabel = nullptr;
-    QLabel* m_topicLabel = nullptr;               // Channel topic display
+    QLabel* m_topicLabel = nullptr;
 
     // Search state
     QString m_searchQuery;
@@ -146,12 +161,15 @@ QSpinBox* m_portInput = nullptr;
     
     // Configuration
     std::unique_ptr<ConfigManager> m_configManager;
-    
+
+    // DCC file transfer
+    std::unique_ptr<DccHandler> m_dccHandler;
+
     // Auto-reconnect state
     std::unique_ptr<QTimer> m_reconnectTimer;
     int m_reconnectAttempts = 0;
-    int m_maxReconnectAttempts = 10;  // Max attempts before giving up
-    bool m_autoReconnectEnabled = true;  // User can disable if needed
+    int m_maxReconnectAttempts = 10;
+    bool m_autoReconnectEnabled = true;
     bool m_manualDisconnectRequested = false;
     QStringList m_pendingRejoinChannels;
     QString m_lastConnectedServer;
